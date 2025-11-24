@@ -4,6 +4,13 @@ class Player extends Objeto {
     this.velocidadMaximaOriginal = 3;
     this.juego = juego;
     this.grid = juego.grid;
+    this.radio = 20; // Radio de colisión del jugador
+    
+    // Sistema de vida
+    this.vidaMaxima = 100;
+    this.vida = 100;
+    this.invulnerable = false;
+    this.tiempoInvulnerabilidad = 1000; // 1 segundo de invulnerabilidad después de recibir daño
 
     this.cargarVariosSpritesAnimados(
       {
@@ -19,45 +26,41 @@ class Player extends Objeto {
         this.cambiarSprite("idle");
       }
     );
-
-    // this.juego.app.stage.addChild(this.sprite);
   }
 
-disparar() {
-  // Verificar que los sprites estén cargados
-  if (!this.listo || !this.spritesAnimados.disparar) {
-    return;
+  disparar() {
+    if (!this.listo || !this.spritesAnimados.disparar) {
+      return;
+    }
+
+    if (this.velocidad.x !== 0 || this.velocidad.y !== 0) {
+      return;
+    }
+
+    let sprite = this.cambiarSprite("disparar", 0, false);
+    
+    setTimeout(() => {
+      this.cambiarSprite("idle");
+    }, 1000);
+
+    let angulo = Math.atan2(
+      this.juego.mouse.x - this.app.stage.x - this.container.x,
+      this.juego.mouse.y - this.app.stage.y - this.container.y
+    );
+    
+    this.juego.balas.push(
+      new Bala(
+        this.container.x,
+        this.container.y - 40,
+        this.juego,
+        Math.sin(angulo),
+        Math.cos(angulo)
+      )
+    );
+
+    this.velocidad.x = 0;
+    this.velocidad.y = 0;
   }
-
-  // Verificar que el jugador esté quieto (velocidad en 0)
-  if (this.velocidad.x !== 0 || this.velocidad.y !== 0) {
-    return; // No disparar si se está moviendo
-  }
-
-  let sprite = this.cambiarSprite("disparar", 0, false);
-  
-  setTimeout(() => {
-    this.cambiarSprite("idle");
-  }, 1000);
-
-  let angulo = Math.atan2(
-    this.juego.mouse.x - this.app.stage.x - this.container.x,
-    this.juego.mouse.y - this.app.stage.y - this.container.y
-  );
-  
-  this.juego.balas.push(
-    new Bala(
-      this.container.x,
-      this.container.y - 40,
-      this.juego,
-      Math.sin(angulo),
-      Math.cos(angulo)
-    )
-  );
-
-  this.velocidad.x = 0;
-  this.velocidad.y = 0;
-}
 
   update() {
     if (!this.listo) return;
@@ -95,11 +98,39 @@ disparar() {
     } else if (this.spriteActual == "correr") {
       this.cambiarSprite("idle");
     }
-    // const vecAtraccionMouse = this.atraccionAlMouse(mouse);
-
-    // this.aplicarFuerza(vecAtraccionMouse);
 
     super.update();
+
+    // Verificar colisiones y aplicar repulsión
+    this.resolverColisionesConObstaculos();
+  }
+
+  resolverColisionesConObstaculos() {
+    if (!this.juego.obstaculos) return;
+    
+    for (let obstaculo of this.juego.obstaculos) {
+      const dx = this.container.x - obstaculo.container.x;
+      const dy = this.container.y - obstaculo.container.y;
+      const distancia = Math.sqrt(dx * dx + dy * dy);
+      const radioTotal = this.radio + obstaculo.radio;
+      
+      if (distancia < radioTotal && distancia > 0) {
+        // Calcular la superposición
+        const superposicion = radioTotal - distancia;
+        
+        // Normalizar el vector de dirección
+        const nx = dx / distancia;
+        const ny = dy / distancia;
+        
+        // Empujar al jugador fuera del árbol
+        this.container.x += nx * superposicion;
+        this.container.y += ny * superposicion;
+        
+        // Opcional: Reducir velocidad al chocar
+        this.velocidad.x *= 0.5;
+        this.velocidad.y *= 0.5;
+      }
+    }
   }
 
   atraccionAlMouse(mouse) {
@@ -116,11 +147,32 @@ disparar() {
     );
 
     if (distanciaCuadrada < 100 * 100) {
-      vecMouse.x *= 0.2; // Intensidad de atracción al mouse
+      vecMouse.x *= 0.2;
       vecMouse.y *= 0.2;
       return vecMouse;
     }
 
     return null;
+  }
+
+  // Método para el sistema de iluminación
+  estoyVisibleEnPantalla(margen = 1) {
+    const posEnPantalla = this.getPosicionEnPantalla();
+    const screenWidth = this.juego.app.screen.width;
+    const screenHeight = this.juego.app.screen.height;
+    
+    return (
+      posEnPantalla.x > -100 * margen &&
+      posEnPantalla.x < screenWidth + 100 * margen &&
+      posEnPantalla.y > -100 * margen &&
+      posEnPantalla.y < screenHeight + 100 * margen
+    );
+  }
+
+  getPosicionEnPantalla() {
+    return {
+      x: this.container.x + this.juego.app.stage.position.x,
+      y: this.container.y + this.juego.app.stage.position.y
+    };
   }
 }
