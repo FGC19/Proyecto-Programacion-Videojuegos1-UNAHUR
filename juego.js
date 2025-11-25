@@ -29,16 +29,14 @@ class Juego {
     
     // Inicializar sistema de niveles
     this.sistemaNiveles = new SistemaNiveles(this);
-  // Conectar la muerte del jugador con la pantalla de Game Over
-  this.onPlayerDeath = this.sistemaNiveles.mostrarGameOver.bind(this.sistemaNiveles);
     
     // NO llamar a ponerArboles, ponerFaroles, ponerZombies aquí
     // El sistema de niveles se encargará
 
     this.ponerListeners();
 
-    // Inicializar sistema de iluminación
-    this.sistemaIluminacion = new SistemaDeIluminacion(this);
+    // NO inicializar sistema de iluminación (requiere faroles)
+    // this.sistemaIluminacion = new SistemaDeIluminacion(this);
 
     setTimeout(() => {
       this.app.ticker.add(this.actualizar.bind(this));
@@ -50,7 +48,7 @@ class Juego {
   }
 
   ponerFondo() {
-    PIXI.Texture.fromURL("./img/bg.png").then((patternTexture) => {
+    PIXI.Texture.fromURL("./img/pasto5.png").then((patternTexture) => {
       this.backgroundSprite = new PIXI.TilingSprite(patternTexture, 5000, 5000);
       this.app.stage.addChild(this.backgroundSprite);
     });
