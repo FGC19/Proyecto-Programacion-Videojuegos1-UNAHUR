@@ -29,6 +29,8 @@ class Juego {
     
     // Inicializar sistema de niveles
     this.sistemaNiveles = new SistemaNiveles(this);
+  // Conectar la muerte del jugador con la pantalla de Game Over
+  this.onPlayerDeath = this.sistemaNiveles.mostrarGameOver.bind(this.sistemaNiveles);
     
     // NO llamar a ponerArboles, ponerFaroles, ponerZombies aquí
     // El sistema de niveles se encargará

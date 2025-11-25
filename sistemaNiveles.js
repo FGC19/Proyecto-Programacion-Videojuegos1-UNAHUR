@@ -126,17 +126,31 @@ class SistemaNiveles {
     this.textoGameOver.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoGameOver);
 
-    // Texto "Presiona ENTER para reiniciar"
-    this.textoReiniciar = new PIXI.Text('Presiona ENTER para reiniciar', {
-      fontFamily: 'Arial',
-      fontSize: 32,
-      fill: 0xFFFFFF,
-      stroke: 0x000000,
-      strokeThickness: 4,
-      align: 'center'
-    });
-    this.textoReiniciar.anchor.set(0.5);
-    this.gameOverContainer.addChild(this.textoReiniciar);
+    
+    
+    
+    // Nota: la pantalla de Game Over se mostrará pero no reiniciará automáticamente.
+  }
+
+  mostrarGameOver() {
+    // Mostrar la pantalla de Game Over 
+    this.gameOverContainer.visible = true;
+    this.gameOverVisible = true;
+
+    // Posicionar los textos en el centro de la pantalla actual
+    this.textoGameOver.position.set(
+      this.juego.app.screen.width / 2,
+      this.juego.app.screen.height / 2 - 40
+    );
+    this.textoReiniciar.position.set(
+      this.juego.app.screen.width / 2,
+      this.juego.app.screen.height / 2 + 40
+    );
+
+    // Aumentar zIndex para que esté encima
+    this.gameOverContainer.zIndex = Z_INDEX.ui + 1000;
+
+    // No se añade ningún listener: la pantalla se queda visible y no reinicia automáticamente
   }
 
   mostrarMensajeNivel(mensaje, duracion = 3000) {
@@ -184,6 +198,23 @@ class SistemaNiveles {
     // Reposicionar jugador al centro
     this.juego.player.container.x = this.juego.canvasWidth / 2;
     this.juego.player.container.y = this.juego.canvasHeight / 2;
+
+    // Reiniciar estado del jugador (vida, invulnerabilidad, etc.)
+    try {
+      const p = this.juego.player;
+      if (p) {
+        p.vida = p.vidaMaxima || 100;
+        p.invulnerable = false;
+        p.estaMuerto = false;
+        p.listo = true;
+        p.container.alpha = 1;
+        p.velocidad.x = 0;
+        p.velocidad.y = 0;
+        p.velocidadMax = p.velocidadMaximaOriginal || p.velocidadMax;
+      }
+    } catch (e) {
+      // ignorar
+    }
   }
 
   limpiarNivel() {
