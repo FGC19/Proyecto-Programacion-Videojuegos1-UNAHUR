@@ -47,6 +47,9 @@ class Zombie extends Objeto {
 
     this.estados = { IDLE: 0, YENDO_AL_PLAYER: 1, ATACANDO: 2 };
     this.estado = this.estados.IDLE;
+    // Sistema de ataque: cooldown para no pegar cada frame
+    this.ultimoAtaque = 0;
+    this.cooldownAtaque = 800; // ms entre ataques
   }
 
   verificarCargaCompleta() {
@@ -210,8 +213,34 @@ class Zombie extends Objeto {
   }
 
   atacar() {
-    if (this.spriteActual.startsWith("ataque")) return;
-    this.cambiarSprite("ataque" + (Math.floor(Math.random() * 2) + 1).toString());
+    if (this.spriteActual && this.spriteActual.startsWith("ataque")) return;
+
+    const cualAtaque = (Math.floor(Math.random() * 2) + 1).toString();
+    this.cambiarSprite("ataque" + cualAtaque);
+
+    // Aplicar daño al player si está cerca y pasó el cooldown
+    try {
+      const ahora = Date.now();
+      const distanciaAlPlayer = calculoDeDistanciaRapido(
+        this.container.x,
+        this.container.y,
+        this.juego.player.container.x,
+        this.juego.player.container.y
+      );
+
+      if (
+        ahora - this.ultimoAtaque >= this.cooldownAtaque &&
+        distanciaAlPlayer < this.juego.grid.cellSize
+      ) {
+        // Damage: 10 (ajustable), knockback 4
+        if (this.juego && this.juego.player && typeof this.juego.player.recibirDanio === 'function') {
+          this.juego.player.recibirDanio(10, { x: this.container.x, y: this.container.y }, 4);
+        }
+        this.ultimoAtaque = ahora;
+      }
+    } catch (e) {
+      // Silenciar errores por seguridad
+    }
   }
 
   evaluarSiEstoyViendoAlPlayer() {

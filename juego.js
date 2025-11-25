@@ -48,7 +48,7 @@ class Juego {
   }
 
   ponerFondo() {
-    PIXI.Texture.fromURL("./img/pasto5.png").then((patternTexture) => {
+    PIXI.Texture.fromURL("./img/bg.png").then((patternTexture) => {
       this.backgroundSprite = new PIXI.TilingSprite(patternTexture, 5000, 5000);
       this.app.stage.addChild(this.backgroundSprite);
     });

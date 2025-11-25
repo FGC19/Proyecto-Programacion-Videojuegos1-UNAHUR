@@ -260,5 +260,26 @@ class SistemaNiveles {
     // Actualizar posición de UI según la cámara
     this.uiContainer.position.x = -this.juego.app.stage.position.x;
     this.uiContainer.position.y = -this.juego.app.stage.position.y;
+    
+    // Actualizar barra de vida y texto según el jugador
+    try {
+      if (this.juego && this.juego.player) {
+        const p = this.juego.player;
+        const maxVida = p.vidaMaxima || 100;
+        const vidaActual = typeof p.vida === 'number' ? p.vida : 0;
+        const ratio = Math.max(0, Math.min(1, vidaActual / maxVida));
+
+        // Redibujar la barra de vida con el ancho proporcional
+        this.barraVida.clear();
+        this.barraVida.beginFill(0x00FF00);
+        this.barraVida.drawRect(0, 0, 200 * ratio, 20);
+        this.barraVida.endFill();
+
+        // Actualizar texto
+        this.textoVida.text = `Vida: ${Math.round(vidaActual)}/${maxVida}`;
+      }
+    } catch (e) {
+      // No interrumpir el juego por errores en el UI
+    }
   }
 }
