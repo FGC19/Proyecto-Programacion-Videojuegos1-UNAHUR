@@ -1,3 +1,4 @@
+
 // Clase Juego (Actualizada)
 class Juego {
   constructor() {
