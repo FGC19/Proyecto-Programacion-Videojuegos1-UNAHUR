@@ -126,10 +126,6 @@ class SistemaNiveles {
     this.textoGameOver.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoGameOver);
 
-    
-    
-    
-    // Nota: la pantalla de Game Over se mostrará pero no reiniciará automáticamente.
   }
 
   mostrarGameOver() {

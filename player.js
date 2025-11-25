@@ -51,6 +51,16 @@ class Player extends Objeto {
       this.juego.mouse.y - this.app.stage.y - this.container.y
     );
     
+    // Si se dispara hacia la izquierda, voltear el sprite (aunque esté quieto)
+    try {
+      const posPantalla = this.getPosicionEnPantalla();
+      if (this.juego.mouse && typeof this.juego.mouse.x === 'number') {
+        if (this.juego.mouse.x < posPantalla.x) this.container.scale.x = -1;
+        else this.container.scale.x = 1;
+      }
+    } catch (e) {
+      // ignore
+    }
     this.juego.balas.push(
       new Bala(
         this.container.x,
@@ -76,6 +86,17 @@ class Player extends Objeto {
       this.velocidad.x = 1;
     } else {
       this.velocidad.x = 0;
+    }
+
+    // Voltear el personaje inmediatamente al presionar A/D (mirar izquierda/derecha)
+    try {
+      if (this.juego.keyboard.a) {
+        this.container.scale.x = -1;
+      } else if (this.juego.keyboard.d) {
+        this.container.scale.x = 1;
+      }
+    } catch (e) {
+      // Ignorar si no existe container por alguna razón
     }
 
     if (this.juego.keyboard.w) {
