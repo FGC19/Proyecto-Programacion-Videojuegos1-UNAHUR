@@ -47,7 +47,7 @@ class SistemaNiveles {
     this.uiContainer.addChild(this.textoNivel);
 
     // Texto de zombies restantes
-    this.textoZombies = new PIXI.Text('Zombies: 150/150', {
+    this.textoZombies = new PIXI.Text('Hombres Lobo: 150/150', {
       fontFamily: 'Arial',
       fontSize: 24,
       fill: 0xFF4444,
@@ -280,7 +280,7 @@ class SistemaNiveles {
     const zombiesRestantes = this.juego.zombies.length;
     
     this.textoNivel.text = `Nivel ${this.nivelActual}`;
-    this.textoZombies.text = `Zombies: ${zombiesRestantes}/${config.zombies}`;
+    this.textoZombies.text = `Hombres Lobo: ${zombiesRestantes}/${config.zombies}`;
   }
 
   update() {
@@ -309,4 +309,5 @@ class SistemaNiveles {
       // No interrumpir el juego por errores en el UI
     }
   }
+
 }
