@@ -10,10 +10,7 @@ class Player extends Objeto {
     this.vidaMaxima = 100;
     this.vida = 100;
     this.invulnerable = false;
-  this.tiempoInvulnerabilidad = 350; // ms de invulnerabilidad después de recibir daño (reducido)
-  // Estado para el sistema de daño
-  this.estaMuerto = false;
-  this.ultimoGolpe = 0; // timestamp del último golpe recibido
+    this.tiempoInvulnerabilidad = 1000; // 1 segundo de invulnerabilidad después de recibir daño
 
     this.cargarVariosSpritesAnimados(
       {
@@ -51,16 +48,6 @@ class Player extends Objeto {
       this.juego.mouse.y - this.app.stage.y - this.container.y
     );
     
-    // Si se dispara hacia la izquierda, voltear el sprite (aunque esté quieto)
-    try {
-      const posPantalla = this.getPosicionEnPantalla();
-      if (this.juego.mouse && typeof this.juego.mouse.x === 'number') {
-        if (this.juego.mouse.x < posPantalla.x) this.container.scale.x = -1;
-        else this.container.scale.x = 1;
-      }
-    } catch (e) {
-      // ignore
-    }
     this.juego.balas.push(
       new Bala(
         this.container.x,
@@ -77,7 +64,6 @@ class Player extends Objeto {
 
   update() {
     if (!this.listo) return;
-    if (this.estaMuerto) return; // Si está muerto, no procesar entrada ni movimiento
     this.vecinos = this.obtenerVecinos();
 
     if (this.juego.keyboard.a) {
@@ -86,17 +72,6 @@ class Player extends Objeto {
       this.velocidad.x = 1;
     } else {
       this.velocidad.x = 0;
-    }
-
-    // Voltear el personaje inmediatamente al presionar A/D (mirar izquierda/derecha)
-    try {
-      if (this.juego.keyboard.a) {
-        this.container.scale.x = -1;
-      } else if (this.juego.keyboard.d) {
-        this.container.scale.x = 1;
-      }
-    } catch (e) {
-      // Ignorar si no existe container por alguna razón
     }
 
     if (this.juego.keyboard.w) {
@@ -128,76 +103,15 @@ class Player extends Objeto {
 
     // Verificar colisiones y aplicar repulsión
     this.resolverColisionesConObstaculos();
-  }
-
-  // -------------------- Sistema de daño --------------------
-  // amount: cantidad de vida a restar
-  // fuente: objeto con {x, y} o contenedor del que proviene el daño (opcional)
-  recibirDanio(amount, fuente = null, knockback = 6) {
-    if (this.estaMuerto) return false;
-    if (this.invulnerable) return false;
-
-    this.vida -= amount;
-    if (this.vida < 0) this.vida = 0;
-    this.ultimoGolpe = Date.now();
-
-    // Feedback visual simple: parpadeo mediante alpha
-    const prevAlpha = this.container.alpha;
-    this.container.alpha = 0.5;
-    setTimeout(() => {
-      // Si el jugador murió en el interín, mantener un estado distinto
-      if (!this.estaMuerto) this.container.alpha = prevAlpha;
-    }, 150);
-
-    // Activar invulnerabilidad temporal
-    this.invulnerable = true;
-    setTimeout(() => {
-      this.invulnerable = false;
-    }, this.tiempoInvulnerabilidad);
-
-    // Aplicar retroceso si hay fuente con coordenadas
-    if (fuente && typeof fuente.x === "number" && typeof fuente.y === "number") {
-      this.aplicarKnockback(fuente, knockback);
-    }
-
-    // Si la vida llegó a cero, gestionar muerte
-    if (this.vida <= 0) {
-      this.morir();
-    }
-
-    return true;
-  }
-
-  aplicarKnockback(fuente, fuerza = 6) {
-    const dx = this.container.x - fuente.x;
-    const dy = this.container.y - fuente.y;
-    const distancia = Math.sqrt(dx * dx + dy * dy) || 1;
-    const nx = dx / distancia;
-    const ny = dy / distancia;
-
-    // Añadir al vector de velocidad actual para empujar al jugador
-    this.velocidad.x += nx * fuerza;
-    this.velocidad.y += ny * fuerza;
-  }
-
-  morir() {
-    this.estaMuerto = true;
-    this.listo = false;
-    // Detener movimiento
-    this.velocidad.x = 0;
-    this.velocidad.y = 0;
-    this.velocidadMax = 0;
-
-    // Feedback visual de muerte
-    this.container.alpha = 0.35;
-
-    // Intentar llamar a un manejador de muerte del juego si existe
-    if (this.juego && typeof this.juego.onPlayerDeath === "function") {
-      try {
-        this.juego.onPlayerDeath();
-      } catch (e) {
-        // no hacer nada si falla
-      }
+    
+    // Verificar colisiones con zombies
+    this.verificarColisionesConZombies();
+    
+    // Efecto visual cuando está invulnerable
+    if (this.invulnerable) {
+      this.container.alpha = Math.sin(Date.now() * 0.02) * 0.5 + 0.5;
+    } else {
+      this.container.alpha = 1;
     }
   }
 
@@ -226,6 +140,51 @@ class Player extends Objeto {
         this.velocidad.x *= 0.5;
         this.velocidad.y *= 0.5;
       }
+    }
+  }
+
+  verificarColisionesConZombies() {
+    if (this.invulnerable) return;
+    
+    for (let zombie of this.juego.zombies) {
+      if (!zombie.listo) continue;
+      
+      const dx = this.container.x - zombie.container.x;
+      const dy = this.container.y - zombie.container.y;
+      const distancia = Math.sqrt(dx * dx + dy * dy);
+      const radioTotal = this.radio + zombie.radio;
+      
+      if (distancia < radioTotal) {
+        this.recibirDanio(5); // Recibe 5 de daño por contacto
+        break; // Solo un zombie puede dañar por frame
+      }
+    }
+  }
+
+  recibirDanio(cantidad) {
+    if (this.invulnerable) return;
+    
+    this.vida -= cantidad;
+    
+    // Asegurar que la vida no sea negativa
+    if (this.vida < 0) this.vida = 0;
+    
+    // Activar invulnerabilidad temporal
+    this.invulnerable = true;
+    setTimeout(() => {
+      this.invulnerable = false;
+    }, this.tiempoInvulnerabilidad);
+    
+    // Si la vida llega a 0 o menos, morir
+    if (this.vida <= 0) {
+      this.morir();
+    }
+  }
+
+  morir() {
+    // Notificar al juego que el jugador murió
+    if (this.juego.sistemaNiveles) {
+      this.juego.sistemaNiveles.gameOver();
     }
   }
 
