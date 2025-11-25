@@ -12,7 +12,7 @@ class SistemaNiveles {
         zombiesParaPasar: 150,
         velocidadZombiesMin: 0.5,
         velocidadZombiesMax: 0.7,
-        mensajeBienvenida: "NIVEL 1 - Sobrevive y elimina a todos los zombies"
+        mensajeBienvenida: "NIVEL 1 - Sobrevive y elimina a todos los Hombres Lobo"
       },
       2: {
         zombies: 400,
@@ -45,7 +45,7 @@ class SistemaNiveles {
     this.uiContainer.addChild(this.textoNivel);
 
     // Texto de zombies restantes
-    this.textoZombies = new PIXI.Text('Zombies: 150/150', {
+    this.textoZombies = new PIXI.Text('Hombres Lobo: 150/150', {
       fontFamily: 'Arial',
       fontSize: 24,
       fill: 0xFF4444,
@@ -103,6 +103,7 @@ class SistemaNiveles {
     // Contenedor de Game Over (inicialmente invisible)
     this.gameOverContainer = new PIXI.Container();
     this.gameOverContainer.visible = false;
+    this.gameOverVisible = false;
     this.uiContainer.addChild(this.gameOverContainer);
 
     // Fondo oscuro semi-transparente
@@ -135,6 +136,69 @@ class SistemaNiveles {
     });
     this.textoReiniciar.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoReiniciar);
+  }
+
+  mostrarGameOver() {
+    // Mostrar la pantalla de Game Over 
+    this.gameOverContainer.visible = true;
+    this.gameOverVisible = true;
+
+    // Posicionar los textos en el centro de la pantalla actual
+    this.textoGameOver.position.set(
+      this.juego.app.screen.width / 2,
+      this.juego.app.screen.height / 2 - 40
+    );
+    this.textoReiniciar.position.set(
+      this.juego.app.screen.width / 2,
+      this.juego.app.screen.height / 2 + 40
+    );
+
+    // Aumentar zIndex para que esté encima
+    this.gameOverContainer.zIndex = Z_INDEX.ui + 1000;
+  }
+
+  gameOver() {
+    // Verificar que no esté ya en Game Over
+    if (this.gameOverVisible) return;
+    
+    // Pausar el juego
+    this.juego.pausa = true;
+    
+    // Mostrar pantalla de Game Over
+    this.mostrarGameOver();
+    
+    // Listener para reiniciar con ENTER
+    this.escucharReinicio();
+  }
+
+  escucharReinicio() {
+    const reiniciarHandler = (e) => {
+      if (e.key === 'Enter' && this.gameOverVisible) {
+        window.removeEventListener('keydown', reiniciarHandler);
+        this.reiniciarJuego();
+      }
+    };
+    
+    window.addEventListener('keydown', reiniciarHandler);
+  }
+
+  reiniciarJuego() {
+    // Ocultar Game Over
+    this.gameOverContainer.visible = false;
+    this.gameOverVisible = false;
+    
+    // Despausar
+    this.juego.pausa = false;
+    
+    // Restaurar vida del jugador
+    if (this.juego.player) {
+      this.juego.player.vida = this.juego.player.vidaMaxima;
+      this.juego.player.invulnerable = false;
+      this.juego.player.container.alpha = 1;
+    }
+    
+    // Reiniciar desde el nivel 1
+    this.iniciarNivel(1);
   }
 
   mostrarMensajeNivel(mensaje, duracion = 3000) {
@@ -176,6 +240,23 @@ class SistemaNiveles {
     // Reposicionar jugador al centro
     this.juego.player.container.x = this.juego.canvasWidth / 2;
     this.juego.player.container.y = this.juego.canvasHeight / 2;
+
+    // Reiniciar estado del jugador (vida, invulnerabilidad, etc.)
+    try {
+      const p = this.juego.player;
+      if (p) {
+        p.vida = p.vidaMaxima || 100;
+        p.invulnerable = false;
+        p.estaMuerto = false;
+        p.listo = true;
+        p.container.alpha = 1;
+        p.velocidad.x = 0;
+        p.velocidad.y = 0;
+        p.velocidadMax = p.velocidadMaximaOriginal || p.velocidadMax;
+      }
+    } catch (e) {
+      // ignorar
+    }
   }
 
   limpiarNivel() {
@@ -236,81 +317,33 @@ class SistemaNiveles {
     const zombiesRestantes = this.juego.zombies.length;
     
     this.textoNivel.text = `Nivel ${this.nivelActual}`;
-    this.textoZombies.text = `Zombies: ${zombiesRestantes}/${config.zombies}`;
-    this.actualizarVida();
-  }
-
-  actualizarVida() {
-    if (!this.juego.player) return;
-    
-    const vidaActual = this.juego.player.vida;
-    const vidaMaxima = this.juego.player.vidaMaxima;
-    const porcentajeVida = vidaActual / vidaMaxima;
-    
-    // Actualizar ancho de la barra
-    this.barraVida.clear();
-    
-    // Color según porcentaje de vida
-    let color = 0x00FF00; // Verde
-    if (porcentajeVida < 0.5) color = 0xFFFF00; // Amarillo
-    if (porcentajeVida < 0.25) color = 0xFF0000; // Rojo
-    
-    this.barraVida.beginFill(color);
-    this.barraVida.drawRect(0, 0, 200 * porcentajeVida, 20);
-    this.barraVida.endFill();
-    
-    // Actualizar texto
-    this.textoVida.text = `Vida: ${Math.ceil(vidaActual)}/${vidaMaxima}`;
-  }
-
-  gameOver() {
-    // Pausar el juego
-    this.juego.pausa = true;
-    
-    // Mostrar pantalla de Game Over
-    this.gameOverContainer.visible = true;
-    
-    // Posicionar textos en el centro de la pantalla
-    const centerX = this.juego.app.screen.width / 2;
-    const centerY = this.juego.app.screen.height / 2;
-    
-    this.textoGameOver.position.set(centerX, centerY - 50);
-    this.textoReiniciar.position.set(centerX, centerY + 50);
-    
-    // Listener para reiniciar con ENTER
-    this.escucharReinicio();
-  }
-
-  escucharReinicio() {
-    const reiniciarHandler = (e) => {
-      if (e.key === 'Enter') {
-        window.removeEventListener('keydown', reiniciarHandler);
-        this.reiniciarJuego();
-      }
-    };
-    
-    window.addEventListener('keydown', reiniciarHandler);
-  }
-
-  reiniciarJuego() {
-    // Ocultar Game Over
-    this.gameOverContainer.visible = false;
-    
-    // Despausar
-    this.juego.pausa = false;
-    
-    // Restaurar vida del jugador
-    this.juego.player.vida = this.juego.player.vidaMaxima;
-    this.juego.player.invulnerable = false;
-    this.juego.player.container.alpha = 1;
-    
-    // Reiniciar desde el nivel 1
-    this.iniciarNivel(1);
+    this.textoZombies.text = `Hombres Lobo: ${zombiesRestantes}/${config.zombies}`;
   }
 
   update() {
     // Actualizar posición de UI según la cámara
     this.uiContainer.position.x = -this.juego.app.stage.position.x;
     this.uiContainer.position.y = -this.juego.app.stage.position.y;
+    
+    // Actualizar barra de vida y texto según el jugador
+    try {
+      if (this.juego && this.juego.player) {
+        const p = this.juego.player;
+        const maxVida = p.vidaMaxima || 100;
+        const vidaActual = typeof p.vida === 'number' ? p.vida : 0;
+        const ratio = Math.max(0, Math.min(1, vidaActual / maxVida));
+
+        // Redibujar la barra de vida con el ancho proporcional
+        this.barraVida.clear();
+        this.barraVida.beginFill(0x00FF00);
+        this.barraVida.drawRect(0, 0, 200 * ratio, 20);
+        this.barraVida.endFill();
+
+        // Actualizar texto
+        this.textoVida.text = `Vida: ${Math.round(vidaActual)}/${maxVida}`;
+      }
+    } catch (e) {
+      // No interrumpir el juego por errores en el UI
+    }
   }
 }
