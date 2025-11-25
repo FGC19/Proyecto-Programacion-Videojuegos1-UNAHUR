@@ -49,7 +49,7 @@ class Zombie extends Objeto {
     this.estado = this.estados.IDLE;
     // Sistema de ataque: cooldown para no pegar cada frame
     this.ultimoAtaque = 0;
-    this.cooldownAtaque = 800; // ms entre ataques
+    this.cooldownAtaque = 500; // ms entre ataques (reducido)
   }
 
   verificarCargaCompleta() {
@@ -213,12 +213,7 @@ class Zombie extends Objeto {
   }
 
   atacar() {
-    if (this.spriteActual && this.spriteActual.startsWith("ataque")) return;
-
-    const cualAtaque = (Math.floor(Math.random() * 2) + 1).toString();
-    this.cambiarSprite("ataque" + cualAtaque);
-
-    // Aplicar daño al player si está cerca y pasó el cooldown
+    // Comprobar distancia y cooldown primero (no depender del sprite)
     try {
       const ahora = Date.now();
       const distanciaAlPlayer = calculoDeDistanciaRapido(
@@ -228,15 +223,24 @@ class Zombie extends Objeto {
         this.juego.player.container.y
       );
 
-      if (
-        ahora - this.ultimoAtaque >= this.cooldownAtaque &&
-        distanciaAlPlayer < this.juego.grid.cellSize
-      ) {
-        // Damage: 10 (ajustable), knockback 4
+      if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
+        // Ejecutar animación de ataque una vez
+        const cualAtaque = (Math.floor(Math.random() * 2) + 1).toString();
+        const sprite = this.cambiarSprite("ataque" + cualAtaque, 0, false);
+
+        // Aplicar daño al player
         if (this.juego && this.juego.player && typeof this.juego.player.recibirDanio === 'function') {
           this.juego.player.recibirDanio(10, { x: this.container.x, y: this.container.y }, 4);
         }
+
         this.ultimoAtaque = ahora;
+
+        // Volver a correr después de un breve tiempo (duración de ataque)
+        setTimeout(() => {
+          if (this.estado === this.estados.ATACANDO || this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
+            this.cambiarSprite("correr");
+          }
+        }, 350);
       }
     } catch (e) {
       // Silenciar errores por seguridad
