@@ -5,51 +5,94 @@ class Zombie extends Objeto {
     this.juego = juego;
     this.grid = juego.grid;
     this.vision = 100 + Math.floor(Math.random() * 150);
-    this.vida = 1;
+    this.vida = 2; // ← CAMBIADO: Ahora tiene 2 de vida
+    this.vidaMaxima = 2; // ← NUEVO: Guardar vida máxima
     this.debug = 0;
-    this.radio = 20; // Radio de colisión
+    this.radio = 20;
 
-    this.spritesTotales = 6;
+    // ========== NUEVO: Sistema de estados de emoción ==========
+    this.estadosEmocion = {
+      NORMAL: 'normal',
+      ENOJADO: 'enojado'
+    };
+    this.estadoEmocional = this.estadosEmocion.NORMAL;
+    this.fueGolpeado = false; // ← NUEVO: Bandera para saber si ya fue golpeado
+    
+    // Estadísticas base
+    this.velocidadBase = velocidad;
+    this.danioBase = 10;
+    this.velocidadAnimacionBase = velocidad * 0.5;
+    
+    // Multiplicadores para estado enojado
+    this.multiplicadorVelocidadEnojado = 1.8; // 80% más rápido
+    this.multiplicadorDanioEnojado = 2.5; // 2.5x más daño
+    this.multiplicadorAnimacionEnojado = 1.5; // Animación más rápida
+    // ========== FIN NUEVO ==========
+
+    this.spritesTotales = 11; // ← CAMBIADO: Ahora cargamos más sprites
     this.spritesCargados = 0;
 
-    // Velocidad de animación más lenta (dividida entre 2)
-    const velocidadAnimacion = velocidad * 0.5;
-
-    this.cargarSpriteAnimado("./img/hombresloboWalk.png", 128, 128, velocidadAnimacion, (sprite) => {
+    // Sprites para estado NORMAL
+    this.cargarSpriteAnimado("./img/hombresloboWalk.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.correr = sprite;
       this.verificarCargaCompleta();
     });
 
-    this.cargarSpriteAnimado("./img/hombresloboAttack_1.png", 128, 128, velocidadAnimacion, (sprite) => {
+    this.cargarSpriteAnimado("./img/hombresloboAttack_1.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.ataque1 = sprite;
       this.verificarCargaCompleta();
     });
 
-    this.cargarSpriteAnimado("./img/hombresloboAttack_2.png", 128, 128, velocidadAnimacion, (sprite) => {
+    this.cargarSpriteAnimado("./img/hombresloboAttack_2.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.ataque2 = sprite;
       this.verificarCargaCompleta();
     });
 
-    this.cargarSpriteAnimado("./img/hombresloboAttack_3.png", 128, 128, velocidadAnimacion, (sprite) => {
+    this.cargarSpriteAnimado("./img/hombresloboAttack_3.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.ataque3 = sprite;
       this.verificarCargaCompleta();
     });
 
-    this.cargarSpriteAnimado("./img/hombresloboDead.png", 128, 128, velocidadAnimacion * 0.5, (sprite) => {
+    this.cargarSpriteAnimado("./img/hombresloboDead.png", 128, 128, this.velocidadAnimacionBase * 0.5, (sprite) => {
       this.spritesAnimados.morir = sprite;
       this.verificarCargaCompleta();
     });
 
-    this.cargarSpriteAnimado("./img/hombresloboHurt.png", 128, 128, velocidadAnimacion * 1.5, (sprite) => {
+    this.cargarSpriteAnimado("./img/hombresloboHurt.png", 128, 128, this.velocidadAnimacionBase * 1.5, (sprite) => {
       this.spritesAnimados.recibeTiro = sprite;
+      this.verificarCargaCompleta();
+    });
+
+    // ========== NUEVO: Sprites para estado ENOJADO ==========
+    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
+      this.spritesAnimados.correrEnojado = sprite;
+      this.verificarCargaCompleta();
+    });
+
+    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
+      this.spritesAnimados.ataque1Enojado = sprite;
+      this.verificarCargaCompleta();
+    });
+
+    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
+      this.spritesAnimados.ataque2Enojado = sprite;
+      this.verificarCargaCompleta();
+    });
+
+    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
+      this.spritesAnimados.ataque3Enojado = sprite;
+      this.verificarCargaCompleta();
+    });
+
+    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase * 1.5, (sprite) => {
+      this.spritesAnimados.recibeTiroEnojado = sprite;
       this.verificarCargaCompleta();
     });
 
     this.estados = { IDLE: 0, YENDO_AL_PLAYER: 1, ATACANDO: 2 };
     this.estado = this.estados.IDLE;
-    // Sistema de ataque: cooldown para no pegar cada frame
     this.ultimoAtaque = 0;
-    this.cooldownAtaque = 500; // ms entre ataques (reducido)
+    this.cooldownAtaque = 500;
   }
 
   verificarCargaCompleta() {
@@ -61,14 +104,75 @@ class Zombie extends Objeto {
     }
   }
 
+  // ========== NUEVO: Métodos para manejar el estado de enojo ==========
+  cambiarEstadoEmocional(nuevoEstado) {
+    if (this.estadoEmocional === nuevoEstado) return;
+    
+    this.estadoEmocional = nuevoEstado;
+    
+    if (nuevoEstado === this.estadosEmocion.ENOJADO) {
+      // Aumentar velocidad máxima
+      this.velocidadMax = this.velocidadBase * this.multiplicadorVelocidadEnojado;
+      
+      // Aumentar velocidad de todas las animaciones
+      Object.keys(this.spritesAnimados).forEach(key => {
+        if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
+          const velocidadOriginal = this.spritesAnimados[key].animationSpeed;
+          this.spritesAnimados[key].animationSpeed = velocidadOriginal * this.multiplicadorAnimacionEnojado;
+        }
+      });
+      
+      // Aplicar efecto visual: tinte rojo intenso
+      this.container.tint = 0xff2222;
+      
+      // Opcional: Hacer que parpadee brevemente
+      this.container.alpha = 0.7;
+      setTimeout(() => {
+        if (this.container) this.container.alpha = 1;
+      }, 100);
+      
+      console.log("🔥 ¡Zombie ENOJADO! Vel:", this.velocidadMax.toFixed(2), "Daño:", this.obtenerDanioActual());
+      
+    } else if (nuevoEstado === this.estadosEmocion.NORMAL) {
+      // Restaurar velocidad normal
+      this.velocidadMax = this.velocidadBase;
+      
+      // Restaurar velocidad de animación normal
+      Object.keys(this.spritesAnimados).forEach(key => {
+        if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
+          const velocidadEnojada = this.spritesAnimados[key].animationSpeed;
+          this.spritesAnimados[key].animationSpeed = velocidadEnojada / this.multiplicadorAnimacionEnojado;
+        }
+      });
+      
+      // Quitar tinte (volver a blanco = color normal)
+      this.container.tint = 0xffffff;
+    }
+  }
+
+  obtenerDanioActual() {
+    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
+      return this.danioBase * this.multiplicadorDanioEnojado;
+    }
+    return this.danioBase;
+  }
+  // ========== FIN NUEVO ==========
+
   recibirTiro() {
-    this.vida -= 1.34;
+    this.vida -= 1; // ← CAMBIADO: Cada flecha hace 1 de daño
+    
+    // ========== NUEVO: Activar modo enojo al primer golpe ==========
+    if (!this.fueGolpeado && this.vida > 0) {
+      this.fueGolpeado = true;
+      this.cambiarEstadoEmocional(this.estadosEmocion.ENOJADO);
+    }
+    // ========== FIN NUEVO ==========
+    
     if (this.vida <= 0) {
       this.juego.zombies = this.juego.zombies.filter((k) => k != this);
       this.grid.remove(this);
       let sprite = this.cambiarSprite("morir", 0, false);
       
-      // Notificar al sistema de niveles
       if (this.juego.sistemaNiveles) {
         this.juego.sistemaNiveles.zombieEliminado();
       }
@@ -77,11 +181,15 @@ class Zombie extends Objeto {
         this.borrar();
       }, 800);
     } else {
-      let sprite = this.cambiarSprite("recibeTiro", 0, false);
+      // ← MODIFICADO: Usar sprite según estado emocional
+      const spriteHurt = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "recibeTiroEnojado" : "recibeTiro";
+      let sprite = this.cambiarSprite(spriteHurt, 0, false);
+      
+      const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
       
       setTimeout(() => {
         if (this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
-          this.cambiarSprite("correr");
+          this.cambiarSprite(spriteCorrer);
         }
       }, 300);
 
@@ -92,6 +200,10 @@ class Zombie extends Objeto {
 
   mirarAlrededor() {
     this.vecinos = this.obtenerVecinos();
+    
+    // ← NUEVO: Obtener zombies vecinos específicamente para comportamiento grupal
+    this.vecinosZombies = this.vecinos.filter(v => v instanceof Zombie);
+    
     this.celdasVecinas = this.miCeldaActual.obtenerCeldasVecinas();
     this.estoyViendoAlPlayer = this.evaluarSiEstoyViendoAlPlayer();
     this.tengoDeVecinoAlPlayer = false;
@@ -118,39 +230,75 @@ class Zombie extends Objeto {
   }
 
   hacerCosasSegunEstado() {
-    let vecAtraccionAlPlayer, vecSeparacion, vecAlineacion, vecCohesion, bordes;
+    let vecAtraccionAlPlayer, vecSeparacion, vecAlineacion, vecCohesion, bordes, evasionObstaculos;
     let sumaDeVectores = new PIXI.Point(0, 0);
 
     bordes = this.ajustarPorBordes();
+    evasionObstaculos = this.resolverColisionesConObstaculos();
 
-    if (this.estado == this.estados.YENDO_AL_PLAYER) {
-      vecAtraccionAlPlayer = this.atraccionAlJugador();
-      this.cambiarSprite("correr");
-    } else if (this.estado == this.estados.IDLE) {
-      vecAlineacion = this.alineacion(this.vecinos);
-      vecCohesion = this.cohesion(this.vecinos);
-      this.cambiarSprite("correr");
-    }
+    const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
 
-    if (
-      this.estado == this.estados.IDLE ||
-      this.estado == this.estados.YENDO_AL_PLAYER
-    ) {
-      vecSeparacion = this.separacion(this.vecinos);
+    // ← NUEVO: Si está enojado, SOLO perseguir al jugador (ignorar grupo)
+    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
+      if (this.estado == this.estados.YENDO_AL_PLAYER || this.estado == this.estados.IDLE) {
+        vecAtraccionAlPlayer = this.atraccionAlJugador();
+        this.cambiarSprite(spriteCorrer);
+        
+        // Solo aplicar atracción al jugador, bordes y evasión de obstáculos
+        sumaDeVectores.x += (vecAtraccionAlPlayer || {}).x || 0;
+        sumaDeVectores.x += (bordes || {}).x || 0;
+        sumaDeVectores.x += (evasionObstaculos || {}).x || 0;
 
-      sumaDeVectores.x += (vecSeparacion || {}).x || 0;
-      sumaDeVectores.x += (vecAlineacion || {}).x || 0;
-      sumaDeVectores.x += (vecCohesion || {}).x || 0;
-      sumaDeVectores.x += (vecAtraccionAlPlayer || {}).x || 0;
-      sumaDeVectores.x += (bordes || {}).x || 0;
+        sumaDeVectores.y += (vecAtraccionAlPlayer || {}).y || 0;
+        sumaDeVectores.y += (bordes || {}).y || 0;
+        sumaDeVectores.y += (evasionObstaculos || {}).y || 0;
 
-      sumaDeVectores.y += (vecSeparacion || {}).y || 0;
-      sumaDeVectores.y += (vecAlineacion || {}).y || 0;
-      sumaDeVectores.y += (vecCohesion || {}).y || 0;
-      sumaDeVectores.y += (vecAtraccionAlPlayer || {}).y || 0;
-      sumaDeVectores.y += (bordes || {}).y || 0;
+        this.aplicarFuerza(sumaDeVectores);
+      }
+    } else {
+      // ← Comportamiento NORMAL (con grupo)
+      if (this.estado == this.estados.YENDO_AL_PLAYER) {
+        vecAtraccionAlPlayer = this.atraccionAlJugador();
+        this.cambiarSprite(spriteCorrer);
+      } else if (this.estado == this.estados.IDLE) {
+        vecAlineacion = this.alineacion(this.vecinosZombies);
+        vecCohesion = this.cohesion(this.vecinosZombies);
+        this.cambiarSprite(spriteCorrer);
+        
+        if (this.vecinosZombies.length === 0) {
+          if (!this.movimientoAleatorio || Math.random() < 0.01) {
+            this.movimientoAleatorio = new PIXI.Point(
+              (Math.random() - 0.5) * 0.5,
+              (Math.random() - 0.5) * 0.5
+            );
+          }
+          sumaDeVectores.x += this.movimientoAleatorio.x;
+          sumaDeVectores.y += this.movimientoAleatorio.y;
+        }
+      }
 
-      this.aplicarFuerza(sumaDeVectores);
+      if (
+        this.estado == this.estados.IDLE ||
+        this.estado == this.estados.YENDO_AL_PLAYER
+      ) {
+        vecSeparacion = this.separacion(this.vecinosZombies);
+
+        sumaDeVectores.x += (vecSeparacion || {}).x || 0;
+        sumaDeVectores.x += (vecAlineacion || {}).x || 0;
+        sumaDeVectores.x += (vecCohesion || {}).x || 0;
+        sumaDeVectores.x += (vecAtraccionAlPlayer || {}).x || 0;
+        sumaDeVectores.x += (bordes || {}).x || 0;
+        sumaDeVectores.x += (evasionObstaculos || {}).x || 0;
+
+        sumaDeVectores.y += (vecSeparacion || {}).y || 0;
+        sumaDeVectores.y += (vecAlineacion || {}).y || 0;
+        sumaDeVectores.y += (vecCohesion || {}).y || 0;
+        sumaDeVectores.y += (vecAtraccionAlPlayer || {}).y || 0;
+        sumaDeVectores.y += (bordes || {}).y || 0;
+        sumaDeVectores.y += (evasionObstaculos || {}).y || 0;
+
+        this.aplicarFuerza(sumaDeVectores);
+      }
     }
 
     if (this.estado == this.estados.ATACANDO) {
@@ -165,17 +313,20 @@ class Zombie extends Objeto {
     if (this.juego.contadorDeFrames % this.equipoParaUpdate == 0) {
       this.mirarAlrededor();
       this.segunDatosCambiarDeEstado();
-      this.hacerCosasSegunEstado();
+      this.hacerCosasSegunEstado(); // La evasión ya se aplica aquí
     }
 
     super.update();
-
-    // Verificar colisiones y aplicar repulsión
-    this.resolverColisionesConObstaculos();
   }
 
   resolverColisionesConObstaculos() {
-    if (!this.juego.obstaculos) return;
+    if (!this.juego.obstaculos) return null;
+    
+    let fuerzaEvasion = new PIXI.Point(0, 0);
+    let hayColision = false;
+    
+    // Radio de detección más amplio para evasión anticipada
+    const radioDeteccion = this.radio + 40;
     
     for (let obstaculo of this.juego.obstaculos) {
       const dx = this.container.x - obstaculo.container.x;
@@ -183,37 +334,74 @@ class Zombie extends Objeto {
       const distancia = Math.sqrt(dx * dx + dy * dy);
       const radioTotal = this.radio + obstaculo.radio;
       
+      // Si está en colisión directa, empujar fuera
       if (distancia < radioTotal && distancia > 0) {
-        // Calcular la superposición
         const superposicion = radioTotal - distancia;
-        
-        // Normalizar el vector de dirección
         const nx = dx / distancia;
         const ny = dy / distancia;
         
-        // Empujar al zombie fuera del árbol
         this.container.x += nx * superposicion;
         this.container.y += ny * superposicion;
+        hayColision = true;
+      }
+      
+      // Sistema de evasión anticipada
+      if (distancia < radioDeteccion && distancia > 0) {
+        const nx = dx / distancia;
+        const ny = dy / distancia;
         
-        // Cambiar dirección ligeramente
-        this.velocidad.x += nx * 0.5;
-        this.velocidad.y += ny * 0.5;
+        // Fuerza de repulsión que disminuye con la distancia
+        const fuerza = (radioDeteccion - distancia) / radioDeteccion;
+        
+        // Si está persiguiendo al jugador, calcular vector tangencial para rodear
+        if (this.estado === this.estados.YENDO_AL_PLAYER) {
+          // Vector perpendicular para esquivar (rodear el obstáculo)
+          const tangencialX = -ny;
+          const tangencialY = nx;
+          
+          // Decidir dirección de esquive según posición del jugador
+          const haciaJugadorX = this.juego.player.container.x - this.container.x;
+          const haciaJugadorY = this.juego.player.container.y - this.container.y;
+          
+          // Producto punto para saber qué lado del obstáculo es mejor
+          const productopunto = tangencialX * haciaJugadorX + tangencialY * haciaJugadorY;
+          const direccion = productopunto > 0 ? 1 : -1;
+          
+          // Combinar repulsión normal con movimiento tangencial
+          fuerzaEvasion.x += nx * fuerza * 3 + tangencialX * direccion * fuerza * 2;
+          fuerzaEvasion.y += ny * fuerza * 3 + tangencialY * direccion * fuerza * 2;
+        } else {
+          // Si no está persiguiendo, solo repeler
+          fuerzaEvasion.x += nx * fuerza * 2;
+          fuerzaEvasion.y += ny * fuerza * 2;
+        }
+      }
+    }
+    
+    return hayColision || fuerzaEvasion.x !== 0 || fuerzaEvasion.y !== 0 ? fuerzaEvasion : null;
+  }
+
+  segunDatosCambiarDeEstado() {
+    // ← MODIFICADO: Si está enojado, siempre perseguir o atacar (nunca IDLE)
+    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
+      if (this.estoyTocandoAlPlayer) {
+        this.estado = this.estados.ATACANDO;
+      } else {
+        this.estado = this.estados.YENDO_AL_PLAYER; // Siempre perseguir cuando enojado
+      }
+    } else {
+      // Comportamiento normal
+      if (this.estoyTocandoAlPlayer) {
+        this.estado = this.estados.ATACANDO;
+      } else if (this.estoyViendoAlPlayer) {
+        this.estado = this.estados.YENDO_AL_PLAYER;
+      } else {
+        this.estado = this.estados.IDLE;
       }
     }
   }
 
-  segunDatosCambiarDeEstado() {
-    if (this.estoyTocandoAlPlayer) {
-      this.estado = this.estados.ATACANDO;
-    } else if (this.estoyViendoAlPlayer) {
-      this.estado = this.estados.YENDO_AL_PLAYER;
-    } else {
-      this.estado = this.estados.IDLE;
-    }
-  }
-
   atacar() {
-    // Comprobar distancia y cooldown primero (no depender del sprite)
     try {
       const ahora = Date.now();
       const distanciaAlPlayer = calculoDeDistanciaRapido(
@@ -224,26 +412,33 @@ class Zombie extends Objeto {
       );
 
       if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
-        // Ejecutar animación de ataque una vez
-        const cualAtaque = (Math.floor(Math.random() * 2) + 1).toString();
-        const sprite = this.cambiarSprite("ataque" + cualAtaque, 0, false);
+        const numAtaque = (Math.floor(Math.random() * 2) + 1).toString();
+        
+        // ← MODIFICADO: Usar sprite de ataque según estado emocional
+        const spriteAtaque = this.estadoEmocional === this.estadosEmocion.ENOJADO 
+          ? "ataque" + numAtaque + "Enojado" 
+          : "ataque" + numAtaque;
+        
+        const sprite = this.cambiarSprite(spriteAtaque, 0, false);
 
-        // Aplicar daño al player
+        // ← MODIFICADO: Usar daño actual según el estado emocional
         if (this.juego && this.juego.player && typeof this.juego.player.recibirDanio === 'function') {
-          this.juego.player.recibirDanio(10, { x: this.container.x, y: this.container.y }, 4);
+          const danio = this.obtenerDanioActual();
+          this.juego.player.recibirDanio(danio);
         }
 
         this.ultimoAtaque = ahora;
 
-        // Volver a correr después de un breve tiempo (duración de ataque)
+        const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
+
         setTimeout(() => {
           if (this.estado === this.estados.ATACANDO || this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
-            this.cambiarSprite("correr");
+            this.cambiarSprite(spriteCorrer);
           }
         }, 350);
       }
     } catch (e) {
-      // Silenciar errores por seguridad
+      // Silenciar errores
     }
   }
 
@@ -291,8 +486,9 @@ class Zombie extends Objeto {
       vecPromedio.x = vecPromedio.x - this.container.x;
       vecPromedio.y = vecPromedio.y - this.container.y;
 
-      vecPromedio.x *= 0.02;
-      vecPromedio.y *= 0.02;
+      // ← MODIFICADO: Aumentar la fuerza de cohesión para mejor agrupación
+      vecPromedio.x *= 0.05;
+      vecPromedio.y *= 0.05;
     }
 
     return vecPromedio;
@@ -338,8 +534,9 @@ class Zombie extends Objeto {
       vecPromedio.x /= total;
       vecPromedio.y /= total;
 
-      vecPromedio.x *= 0.2;
-      vecPromedio.y *= 0.2;
+      // ← MODIFICADO: Aumentar la fuerza de alineación
+      vecPromedio.x *= 0.3;
+      vecPromedio.y *= 0.3;
     }
 
     return vecPromedio;
@@ -358,7 +555,6 @@ class Zombie extends Objeto {
     return fuerza;
   }
 
-  // Método para el sistema de iluminación
   estoyVisibleEnPantalla(margen = 1) {
     const posEnPantalla = this.getPosicionEnPantalla();
     const screenWidth = this.juego.app.screen.width;
