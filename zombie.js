@@ -5,34 +5,29 @@ class Zombie extends Objeto {
     this.juego = juego;
     this.grid = juego.grid;
     this.vision = 100 + Math.floor(Math.random() * 150);
-    this.vida = 2; // ← CAMBIADO: Ahora tiene 2 de vida
-    this.vidaMaxima = 2; // ← NUEVO: Guardar vida máxima
+    this.vida = 2;
+    this.vidaMaxima = 2;
     this.debug = 0;
     this.radio = 20;
 
-    // ========== NUEVO: Sistema de estados de emoción ==========
     this.estadosEmocion = {
       NORMAL: 'normal',
       ENOJADO: 'enojado'
     };
     this.estadoEmocional = this.estadosEmocion.NORMAL;
-    this.fueGolpeado = false; // ← NUEVO: Bandera para saber si ya fue golpeado
+    this.fueGolpeado = false;
     
-    // Estadísticas base
     this.velocidadBase = velocidad;
     this.danioBase = 10;
     this.velocidadAnimacionBase = velocidad * 0.5;
     
-    // Multiplicadores para estado enojado
-    this.multiplicadorVelocidadEnojado = 1.8; // 80% más rápido
-    this.multiplicadorDanioEnojado = 2.5; // 2.5x más daño
-    this.multiplicadorAnimacionEnojado = 1.5; // Animación más rápida
-    // ========== FIN NUEVO ==========
+    this.multiplicadorVelocidadEnojado = 1.8;
+    this.multiplicadorDanioEnojado = 2.5;
+    this.multiplicadorAnimacionEnojado = 1.5;
 
-    this.spritesTotales = 11; // ← CAMBIADO: Ahora cargamos más sprites
+    this.spritesTotales = 11;
     this.spritesCargados = 0;
 
-    // Sprites para estado NORMAL
     this.cargarSpriteAnimado("./img/hombresloboWalk.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.correr = sprite;
       this.verificarCargaCompleta();
@@ -63,7 +58,6 @@ class Zombie extends Objeto {
       this.verificarCargaCompleta();
     });
 
-    // ========== NUEVO: Sprites para estado ENOJADO ==========
     this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.correrEnojado = sprite;
       this.verificarCargaCompleta();
@@ -104,17 +98,14 @@ class Zombie extends Objeto {
     }
   }
 
-  // ========== NUEVO: Métodos para manejar el estado de enojo ==========
   cambiarEstadoEmocional(nuevoEstado) {
     if (this.estadoEmocional === nuevoEstado) return;
     
     this.estadoEmocional = nuevoEstado;
     
     if (nuevoEstado === this.estadosEmocion.ENOJADO) {
-      // Aumentar velocidad máxima
       this.velocidadMax = this.velocidadBase * this.multiplicadorVelocidadEnojado;
       
-      // Aumentar velocidad de todas las animaciones
       Object.keys(this.spritesAnimados).forEach(key => {
         if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
           const velocidadOriginal = this.spritesAnimados[key].animationSpeed;
@@ -122,10 +113,7 @@ class Zombie extends Objeto {
         }
       });
       
-      // Aplicar efecto visual: tinte rojo intenso
       this.container.tint = 0xff2222;
-      
-      // Opcional: Hacer que parpadee brevemente
       this.container.alpha = 0.7;
       setTimeout(() => {
         if (this.container) this.container.alpha = 1;
@@ -134,10 +122,8 @@ class Zombie extends Objeto {
       console.log("🔥 ¡Zombie ENOJADO! Vel:", this.velocidadMax.toFixed(2), "Daño:", this.obtenerDanioActual());
       
     } else if (nuevoEstado === this.estadosEmocion.NORMAL) {
-      // Restaurar velocidad normal
       this.velocidadMax = this.velocidadBase;
       
-      // Restaurar velocidad de animación normal
       Object.keys(this.spritesAnimados).forEach(key => {
         if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
           const velocidadEnojada = this.spritesAnimados[key].animationSpeed;
@@ -145,7 +131,6 @@ class Zombie extends Objeto {
         }
       });
       
-      // Quitar tinte (volver a blanco = color normal)
       this.container.tint = 0xffffff;
     }
   }
@@ -156,17 +141,20 @@ class Zombie extends Objeto {
     }
     return this.danioBase;
   }
-  // ========== FIN NUEVO ==========
 
-  recibirTiro() {
-    this.vida -= 1; // ← CAMBIADO: Cada flecha hace 1 de daño
+  recibirTiro(origen) { // ← MODIFICADO: Ahora recibe el objeto que le pegó
+    this.vida -= 1;
     
-    // ========== NUEVO: Activar modo enojo al primer golpe ==========
+    // ========== NUEVO: Generar partículas de sangre ==========
+    if (this.juego.particleSystem && origen) {
+      this.juego.particleSystem.hacerQueLeSalgaSangreAAlguien(this, origen);
+    }
+    // ========== FIN NUEVO ==========
+    
     if (!this.fueGolpeado && this.vida > 0) {
       this.fueGolpeado = true;
       this.cambiarEstadoEmocional(this.estadosEmocion.ENOJADO);
     }
-    // ========== FIN NUEVO ==========
     
     if (this.vida <= 0) {
       this.juego.zombies = this.juego.zombies.filter((k) => k != this);
@@ -181,7 +169,6 @@ class Zombie extends Objeto {
         this.borrar();
       }, 800);
     } else {
-      // ← MODIFICADO: Usar sprite según estado emocional
       const spriteHurt = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "recibeTiroEnojado" : "recibeTiro";
       let sprite = this.cambiarSprite(spriteHurt, 0, false);
       
@@ -200,10 +187,7 @@ class Zombie extends Objeto {
 
   mirarAlrededor() {
     this.vecinos = this.obtenerVecinos();
-    
-    // ← NUEVO: Obtener zombies vecinos específicamente para comportamiento grupal
     this.vecinosZombies = this.vecinos.filter(v => v instanceof Zombie);
-    
     this.celdasVecinas = this.miCeldaActual.obtenerCeldasVecinas();
     this.estoyViendoAlPlayer = this.evaluarSiEstoyViendoAlPlayer();
     this.tengoDeVecinoAlPlayer = false;
@@ -238,13 +222,11 @@ class Zombie extends Objeto {
 
     const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
 
-    // ← NUEVO: Si está enojado, SOLO perseguir al jugador (ignorar grupo)
     if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
       if (this.estado == this.estados.YENDO_AL_PLAYER || this.estado == this.estados.IDLE) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
         
-        // Solo aplicar atracción al jugador, bordes y evasión de obstáculos
         sumaDeVectores.x += (vecAtraccionAlPlayer || {}).x || 0;
         sumaDeVectores.x += (bordes || {}).x || 0;
         sumaDeVectores.x += (evasionObstaculos || {}).x || 0;
@@ -256,7 +238,6 @@ class Zombie extends Objeto {
         this.aplicarFuerza(sumaDeVectores);
       }
     } else {
-      // ← Comportamiento NORMAL (con grupo)
       if (this.estado == this.estados.YENDO_AL_PLAYER) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
@@ -313,7 +294,7 @@ class Zombie extends Objeto {
     if (this.juego.contadorDeFrames % this.equipoParaUpdate == 0) {
       this.mirarAlrededor();
       this.segunDatosCambiarDeEstado();
-      this.hacerCosasSegunEstado(); // La evasión ya se aplica aquí
+      this.hacerCosasSegunEstado();
     }
 
     super.update();
@@ -325,7 +306,6 @@ class Zombie extends Objeto {
     let fuerzaEvasion = new PIXI.Point(0, 0);
     let hayColision = false;
     
-    // Radio de detección más amplio para evasión anticipada
     const radioDeteccion = this.radio + 40;
     
     for (let obstaculo of this.juego.obstaculos) {
@@ -334,7 +314,6 @@ class Zombie extends Objeto {
       const distancia = Math.sqrt(dx * dx + dy * dy);
       const radioTotal = this.radio + obstaculo.radio;
       
-      // Si está en colisión directa, empujar fuera
       if (distancia < radioTotal && distancia > 0) {
         const superposicion = radioTotal - distancia;
         const nx = dx / distancia;
@@ -345,33 +324,25 @@ class Zombie extends Objeto {
         hayColision = true;
       }
       
-      // Sistema de evasión anticipada
       if (distancia < radioDeteccion && distancia > 0) {
         const nx = dx / distancia;
         const ny = dy / distancia;
         
-        // Fuerza de repulsión que disminuye con la distancia
         const fuerza = (radioDeteccion - distancia) / radioDeteccion;
         
-        // Si está persiguiendo al jugador, calcular vector tangencial para rodear
         if (this.estado === this.estados.YENDO_AL_PLAYER) {
-          // Vector perpendicular para esquivar (rodear el obstáculo)
           const tangencialX = -ny;
           const tangencialY = nx;
           
-          // Decidir dirección de esquive según posición del jugador
           const haciaJugadorX = this.juego.player.container.x - this.container.x;
           const haciaJugadorY = this.juego.player.container.y - this.container.y;
           
-          // Producto punto para saber qué lado del obstáculo es mejor
           const productopunto = tangencialX * haciaJugadorX + tangencialY * haciaJugadorY;
           const direccion = productopunto > 0 ? 1 : -1;
           
-          // Combinar repulsión normal con movimiento tangencial
           fuerzaEvasion.x += nx * fuerza * 3 + tangencialX * direccion * fuerza * 2;
           fuerzaEvasion.y += ny * fuerza * 3 + tangencialY * direccion * fuerza * 2;
         } else {
-          // Si no está persiguiendo, solo repeler
           fuerzaEvasion.x += nx * fuerza * 2;
           fuerzaEvasion.y += ny * fuerza * 2;
         }
@@ -382,15 +353,13 @@ class Zombie extends Objeto {
   }
 
   segunDatosCambiarDeEstado() {
-    // ← MODIFICADO: Si está enojado, siempre perseguir o atacar (nunca IDLE)
     if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
       if (this.estoyTocandoAlPlayer) {
         this.estado = this.estados.ATACANDO;
       } else {
-        this.estado = this.estados.YENDO_AL_PLAYER; // Siempre perseguir cuando enojado
+        this.estado = this.estados.YENDO_AL_PLAYER;
       }
     } else {
-      // Comportamiento normal
       if (this.estoyTocandoAlPlayer) {
         this.estado = this.estados.ATACANDO;
       } else if (this.estoyViendoAlPlayer) {
@@ -414,17 +383,15 @@ class Zombie extends Objeto {
       if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
         const numAtaque = (Math.floor(Math.random() * 2) + 1).toString();
         
-        // ← MODIFICADO: Usar sprite de ataque según estado emocional
         const spriteAtaque = this.estadoEmocional === this.estadosEmocion.ENOJADO 
           ? "ataque" + numAtaque + "Enojado" 
           : "ataque" + numAtaque;
         
         const sprite = this.cambiarSprite(spriteAtaque, 0, false);
 
-        // ← MODIFICADO: Usar daño actual según el estado emocional
         if (this.juego && this.juego.player && typeof this.juego.player.recibirDanio === 'function') {
           const danio = this.obtenerDanioActual();
-          this.juego.player.recibirDanio(danio);
+          this.juego.player.recibirDanio(danio, this); // ← MODIFICADO: Pasar referencia del zombie
         }
 
         this.ultimoAtaque = ahora;
@@ -486,7 +453,6 @@ class Zombie extends Objeto {
       vecPromedio.x = vecPromedio.x - this.container.x;
       vecPromedio.y = vecPromedio.y - this.container.y;
 
-      // ← MODIFICADO: Aumentar la fuerza de cohesión para mejor agrupación
       vecPromedio.x *= 0.05;
       vecPromedio.y *= 0.05;
     }
@@ -534,7 +500,6 @@ class Zombie extends Objeto {
       vecPromedio.x /= total;
       vecPromedio.y /= total;
 
-      // ← MODIFICADO: Aumentar la fuerza de alineación
       vecPromedio.x *= 0.3;
       vecPromedio.y *= 0.3;
     }
