@@ -1,5 +1,4 @@
-
-// Clase Juego (Actualizada)
+// Clase Juego (Actualizada con Sistema de Partículas)
 class Juego {
   constructor() {
     this.pausa = false;
@@ -17,33 +16,29 @@ class Juego {
     this.grid = new Grid(50, this);
     this.zombies = [];
     this.balas = [];
-    this.obstaculos = []; // Array para obstáculos
-    this.faroles = []; // Array para faroles
-    this.arboles = []; // Array para árboles (para el sistema de iluminación)
+    this.obstaculos = [];
+    this.arboles = [];
 
     this.keyboard = {};
 
     this.app.stage.sortableChildren = true;
 
+    // ========== NUEVO: Inicializar sistema de partículas ==========
+    this.particleSystem = new ParticleSystem(this);
+    console.log("✓ Sistema de partículas inicializado");
+    // ========== FIN NUEVO ==========
+
     this.ponerFondo();
     this.ponerProtagonista();
     
-    // Inicializar sistema de niveles
     this.sistemaNiveles = new SistemaNiveles(this);
-    
-    // NO llamar a ponerArboles, ponerFaroles, ponerZombies aquí
-    // El sistema de niveles se encargará
 
     this.ponerListeners();
-
-    // NO inicializar sistema de iluminación (requiere faroles)
-    // this.sistemaIluminacion = new SistemaDeIluminacion(this);
 
     setTimeout(() => {
       this.app.ticker.add(this.actualizar.bind(this));
       window.__PIXI_APP__ = this.app;
       
-      // Iniciar el nivel 1
       this.sistemaNiveles.iniciarNivel(1);
     }, 100);
   }
@@ -63,25 +58,23 @@ class Juego {
     );
   }
 
-  // ← NUEVO: Método para generar árboles
   ponerArboles(cantidad) {
     for (let i = 0; i < cantidad; i++) {
       const x = Math.random() * this.canvasWidth;
       const y = Math.random() * this.canvasHeight;
-      const tipo = Math.floor(Math.random() * 2) + 1; // Tipo 1 o 2
-      const scale = 0.8 + Math.random() * 0.4; // Escala entre 0.8 y 1.2
+      const tipo = Math.floor(Math.random() * 2) + 1;
+      const scale = 0.8 + Math.random() * 0.4;
       
       const arbol = new Arbol(x, y, this, tipo, scale);
       this.arboles.push(arbol);
     }
   }
 
-  // ← NUEVO: Método para generar faroles
   ponerFaroles(cantidad) {
     for (let i = 0; i < cantidad; i++) {
       const x = Math.random() * this.canvasWidth;
       const y = Math.random() * this.canvasHeight;
-      const radioLuz = 150 + Math.random() * 100; // Radio entre 150 y 250
+      const radioLuz = 150 + Math.random() * 100;
       
       new Farol(x, y, this, radioLuz);
     }
@@ -101,7 +94,6 @@ class Juego {
     }
   }
 
-  // ← NUEVO: Método para crear zombies con configuración específica
   ponerZombiesConConfiguracion(cant, velocidadMin, velocidadMax) {
     for (let i = 0; i < cant; i++) {
       let velocidad = Math.random() * (velocidadMax - velocidadMin) + velocidadMin;
@@ -145,7 +137,6 @@ class Juego {
       delete this.keyboard[e.key.toLowerCase()];
     });
 
-    // ← NUEVO: Tecla L para toggle de iluminación
     window.addEventListener("keydown", (e) => {
       if (e.key.toLowerCase() === 'l' && this.sistemaIluminacion) {
         this.sistemaIluminacion.toggle();
@@ -178,17 +169,20 @@ class Juego {
       bala.update();
     });
 
-    // ← NUEVO: Actualizar obstáculos (para animaciones)
     this.obstaculos.forEach((obstaculo) => {
       obstaculo.update();
     });
 
-    // ← NUEVO: Actualizar sistema de iluminación
+    // ========== NUEVO: Actualizar sistema de partículas ==========
+    if (this.particleSystem) {
+      this.particleSystem.update();
+    }
+    // ========== FIN NUEVO ==========
+
     if (this.sistemaIluminacion) {
       this.sistemaIluminacion.tick();
     }
 
-    // ← NUEVO: Actualizar sistema de niveles
     if (this.sistemaNiveles) {
       this.sistemaNiveles.update();
     }
