@@ -1,27 +1,24 @@
 class Bala extends Objeto {
-  constructor(x, y, juego, velX, velY) {
+  constructor(x, y, juego, velX, velY, origen) { // ← NUEVO: recibe origen (el jugador)
     super(x, y, 20, juego);
     this.velocidad.x = velX;
     this.velocidad.y = velY;
+    this.origen = origen; // ← NUEVO: Guardar quién disparó
 
     this.juego = juego;
     this.grid = juego.grid;
     this.vision = 2;
     
-    // Cargar la textura del sprite
     this.sprite = new PIXI.Sprite();
     this.sprite.texture = PIXI.Texture.from("./Arrow.png");
     
-    // Ajustar el tamaño para que se vea (puedes cambiar estos valores)
-    this.sprite.width = 32;   // ← CAMBIO: de 2 a 32
-    this.sprite.height = 32;  // ← CAMBIO: de 2 a 32
+    this.sprite.width = 32;
+    this.sprite.height = 32;
     
-    // Centrar el pivot para que rote correctamente
-    this.sprite.anchor.set(0.5, 0.5); // ← NUEVO: centrar el anchor
+    this.sprite.anchor.set(0.5, 0.5);
     
-    // Calcular el ángulo de rotación según la dirección
-    const angulo = Math.atan2(velY, velX); // ← NUEVO: calcular ángulo
-    this.sprite.rotation = angulo; // ← NUEVO: rotar la flecha
+    const angulo = Math.atan2(velY, velX);
+    this.sprite.rotation = angulo;
     
     this.container.addChild(this.sprite);
     this.debug = 0;
@@ -64,7 +61,7 @@ class Bala extends Objeto {
       }
       
       if (cual != null) {
-        objs[cual].recibirTiro();
+        objs[cual].recibirTiro(this.origen); // ← MODIFICADO: Pasar el origen (jugador)
         this.borrar();
       }
     }
