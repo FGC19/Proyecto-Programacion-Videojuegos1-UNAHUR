@@ -4,13 +4,12 @@ class Player extends Objeto {
     this.velocidadMaximaOriginal = 3;
     this.juego = juego;
     this.grid = juego.grid;
-    this.radio = 20; // Radio de colisión del jugador
+    this.radio = 20;
     
-    // Sistema de vida
     this.vidaMaxima = 100;
     this.vida = 100;
     this.invulnerable = false;
-    this.tiempoInvulnerabilidad = 1000; // 1 segundo de invulnerabilidad después de recibir daño
+    this.tiempoInvulnerabilidad = 1000;
 
     this.cargarVariosSpritesAnimados(
       {
@@ -48,13 +47,15 @@ class Player extends Objeto {
       this.juego.mouse.y - this.app.stage.y - this.container.y
     );
     
+    // ← MODIFICADO: Pasar referencia del jugador (this) como origen
     this.juego.balas.push(
       new Bala(
         this.container.x,
         this.container.y - 40,
         this.juego,
         Math.sin(angulo),
-        Math.cos(angulo)
+        Math.cos(angulo),
+        this // ← NUEVO: Pasar el jugador como origen
       )
     );
 
@@ -101,13 +102,9 @@ class Player extends Objeto {
 
     super.update();
 
-    // Verificar colisiones y aplicar repulsión
     this.resolverColisionesConObstaculos();
-    
-    // Verificar colisiones con zombies
     this.verificarColisionesConZombies();
     
-    // Efecto visual cuando está invulnerable
     if (this.invulnerable) {
       this.container.alpha = Math.sin(Date.now() * 0.02) * 0.5 + 0.5;
     } else {
@@ -125,18 +122,14 @@ class Player extends Objeto {
       const radioTotal = this.radio + obstaculo.radio;
       
       if (distancia < radioTotal && distancia > 0) {
-        // Calcular la superposición
         const superposicion = radioTotal - distancia;
         
-        // Normalizar el vector de dirección
         const nx = dx / distancia;
         const ny = dy / distancia;
         
-        // Empujar al jugador fuera del árbol
         this.container.x += nx * superposicion;
         this.container.y += ny * superposicion;
         
-        // Opcional: Reducir velocidad al chocar
         this.velocidad.x *= 0.5;
         this.velocidad.y *= 0.5;
       }
@@ -155,34 +148,36 @@ class Player extends Objeto {
       const radioTotal = this.radio + zombie.radio;
       
       if (distancia < radioTotal) {
-        this.recibirDanio(5); // Recibe 5 de daño por contacto
-        break; // Solo un zombie puede dañar por frame
+        this.recibirDanio(5, zombie); // ← MODIFICADO: Pasar el zombie que causó el daño
+        break;
       }
     }
   }
 
-  recibirDanio(cantidad) {
+  recibirDanio(cantidad, origen) { // ← MODIFICADO: Ahora recibe el objeto que causó el daño
     if (this.invulnerable) return;
     
     this.vida -= cantidad;
     
-    // Asegurar que la vida no sea negativa
+    // ========== NUEVO: Generar partículas de sangre ==========
+    if (this.juego.particleSystem && origen) {
+      this.juego.particleSystem.hacerQueLeSalgaSangreAAlguien(this, origen);
+    }
+    // ========== FIN NUEVO ==========
+    
     if (this.vida < 0) this.vida = 0;
     
-    // Activar invulnerabilidad temporal
     this.invulnerable = true;
     setTimeout(() => {
       this.invulnerable = false;
     }, this.tiempoInvulnerabilidad);
     
-    // Si la vida llega a 0 o menos, morir
     if (this.vida <= 0) {
       this.morir();
     }
   }
 
   morir() {
-    // Notificar al juego que el jugador murió
     if (this.juego.sistemaNiveles) {
       this.juego.sistemaNiveles.gameOver();
     }
@@ -210,7 +205,6 @@ class Player extends Objeto {
     return null;
   }
 
-  // Método para el sistema de iluminación
   estoyVisibleEnPantalla(margen = 1) {
     const posEnPantalla = this.getPosicionEnPantalla();
     const screenWidth = this.juego.app.screen.width;
