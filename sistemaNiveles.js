@@ -4,6 +4,13 @@ class SistemaNiveles {
     this.nivelActual = 1;
     this.zombiesEliminados = 0;
     
+    // ========== NUEVO: Sistema de Score ==========
+    this.score = 0;
+    this.highScore = this.cargarHighScore();
+    this.puntosporZombie = 10;
+    this.puntosporNivel = 500;
+    // ========== FIN NUEVO ==========
+    
     // Configuración de niveles
     this.niveles = {
       1: {
@@ -26,6 +33,42 @@ class SistemaNiveles {
     
     this.crearUI();
   }
+
+  // ========== NUEVO: Métodos de Score ==========
+  cargarHighScore() {
+    const saved = localStorage.getItem('zombieHighScore');
+    return saved ? parseInt(saved) : 0;
+  }
+
+  guardarHighScore() {
+    localStorage.setItem('zombieHighScore', this.highScore.toString());
+  }
+
+  agregarPuntos(puntos) {
+    this.score += puntos;
+    
+    // Actualizar high score si es superado
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      this.guardarHighScore();
+      
+      // Efecto visual cuando se supera el high score
+      this.textoHighScore.style.fill = 0xFFD700; // Dorado
+      setTimeout(() => {
+        if (this.textoHighScore) {
+          this.textoHighScore.style.fill = 0xFFFF00; // Volver a amarillo
+        }
+      }, 500);
+    }
+    
+    this.actualizarUI();
+  }
+
+  resetearScore() {
+    this.score = 0;
+    this.actualizarUI();
+  }
+  // ========== FIN NUEVO ==========
 
   crearUI() {
     // Crear contenedor de UI
@@ -55,12 +98,36 @@ class SistemaNiveles {
     this.textoZombies.position.set(20, 60);
     this.uiContainer.addChild(this.textoZombies);
 
+    // ========== NUEVO: UI de Score ==========
+    // Score actual
+    this.textoScore = new PIXI.Text('Score: 0', {
+      fontFamily: 'Arial',
+      fontSize: 28,
+      fill: 0x00FF00,
+      stroke: 0x000000,
+      strokeThickness: 4
+    });
+    this.textoScore.position.set(20, 95);
+    this.uiContainer.addChild(this.textoScore);
+
+    // High Score
+    this.textoHighScore = new PIXI.Text('High Score: ' + this.highScore, {
+      fontFamily: 'Arial',
+      fontSize: 24,
+      fill: 0xFFFF00,
+      stroke: 0x000000,
+      strokeThickness: 3
+    });
+    this.textoHighScore.position.set(20, 130);
+    this.uiContainer.addChild(this.textoHighScore);
+    // ========== FIN NUEVO ==========
+
     // Barra de vida - Fondo (rojo)
     this.barraVidaFondo = new PIXI.Graphics();
     this.barraVidaFondo.beginFill(0x660000);
     this.barraVidaFondo.drawRect(0, 0, 200, 20);
     this.barraVidaFondo.endFill();
-    this.barraVidaFondo.position.set(20, 100);
+    this.barraVidaFondo.position.set(20, 165);
     this.uiContainer.addChild(this.barraVidaFondo);
 
     // Barra de vida - Vida actual (verde)
@@ -68,7 +135,7 @@ class SistemaNiveles {
     this.barraVida.beginFill(0x00FF00);
     this.barraVida.drawRect(0, 0, 200, 20);
     this.barraVida.endFill();
-    this.barraVida.position.set(20, 100);
+    this.barraVida.position.set(20, 165);
     this.uiContainer.addChild(this.barraVida);
 
     // Texto de vida
@@ -79,7 +146,7 @@ class SistemaNiveles {
       stroke: 0x000000,
       strokeThickness: 3
     });
-    this.textoVida.position.set(25, 102);
+    this.textoVida.position.set(25, 167);
     this.uiContainer.addChild(this.textoVida);
 
     // Mensaje de nivel (se muestra temporalmente)
@@ -125,6 +192,30 @@ class SistemaNiveles {
     this.textoGameOver.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoGameOver);
 
+    // ========== NUEVO: Mostrar score final y high score ==========
+    this.textoScoreFinal = new PIXI.Text('', {
+      fontFamily: 'Arial',
+      fontSize: 36,
+      fill: 0x00FF00,
+      stroke: 0x000000,
+      strokeThickness: 4,
+      align: 'center'
+    });
+    this.textoScoreFinal.anchor.set(0.5);
+    this.gameOverContainer.addChild(this.textoScoreFinal);
+
+    this.textoHighScoreFinal = new PIXI.Text('', {
+      fontFamily: 'Arial',
+      fontSize: 32,
+      fill: 0xFFFF00,
+      stroke: 0x000000,
+      strokeThickness: 4,
+      align: 'center'
+    });
+    this.textoHighScoreFinal.anchor.set(0.5);
+    this.gameOverContainer.addChild(this.textoHighScoreFinal);
+    // ========== FIN NUEVO ==========
+
     // Texto "Presiona ENTER para reiniciar"
     this.textoReiniciar = new PIXI.Text('Presiona ENTER para reiniciar', {
       fontFamily: 'Arial',
@@ -143,15 +234,20 @@ class SistemaNiveles {
     this.gameOverContainer.visible = true;
     this.gameOverVisible = true;
 
-    // Posicionar los textos en el centro de la pantalla actual
-    this.textoGameOver.position.set(
-      this.juego.app.screen.width / 2,
-      this.juego.app.screen.height / 2 - 40
-    );
-    this.textoReiniciar.position.set(
-      this.juego.app.screen.width / 2,
-      this.juego.app.screen.height / 2 + 40
-    );
+    const centerX = this.juego.app.screen.width / 2;
+    const centerY = this.juego.app.screen.height / 2;
+
+    this.textoGameOver.position.set(centerX, centerY - 100);
+    
+    // ========== NUEVO: Mostrar scores ==========
+    this.textoScoreFinal.text = 'Score Final: ' + this.score;
+    this.textoScoreFinal.position.set(centerX, centerY - 20);
+    
+    this.textoHighScoreFinal.text = 'High Score: ' + this.highScore;
+    this.textoHighScoreFinal.position.set(centerX, centerY + 30);
+    // ========== FIN NUEVO ==========
+    
+    this.textoReiniciar.position.set(centerX, centerY + 90);
 
     // Aumentar zIndex para que esté encima
     this.gameOverContainer.zIndex = Z_INDEX.ui + 1000;
@@ -190,6 +286,10 @@ class SistemaNiveles {
     // Despausar
     this.juego.pausa = false;
     
+    // ========== NUEVO: Resetear score ==========
+    this.resetearScore();
+    // ========== FIN NUEVO ==========
+    
     // Restaurar vida del jugador
     if (this.juego.player) {
       this.juego.player.vida = this.juego.player.vidaMaxima;
@@ -223,7 +323,7 @@ class SistemaNiveles {
     // Limpiar nivel anterior
     this.limpiarNivel();
     
-    // Crear nuevo nivel
+    // Crear nuevo nivel - IGUAL QUE EN EL ORIGINAL
     this.juego.ponerArboles(config.arboles);
     this.juego.ponerZombiesConConfiguracion(
       config.zombies,
@@ -255,12 +355,12 @@ class SistemaNiveles {
         p.velocidadMax = p.velocidadMaximaOriginal || p.velocidadMax;
       }
     } catch (e) {
-      // ignorar
+      console.error("Error reiniciando jugador:", e);
     }
   }
 
   limpiarNivel() {
-    // Eliminar todos los zombies
+    // Eliminar todos los zombies - IGUAL QUE EN EL ORIGINAL
     this.juego.zombies.forEach(z => {
       this.juego.app.stage.removeChild(z.container);
       this.juego.grid.remove(z);
@@ -287,6 +387,11 @@ class SistemaNiveles {
 
   zombieEliminado() {
     this.zombiesEliminados++;
+    
+    // ========== NUEVO: Agregar puntos al eliminar zombie ==========
+    this.agregarPuntos(this.puntosporZombie);
+    // ========== FIN NUEVO ==========
+    
     this.actualizarUI();
     
     // Verificar si pasó el nivel
@@ -297,11 +402,15 @@ class SistemaNiveles {
   }
 
   pasarSiguienteNivel() {
+    // ========== NUEVO: Bonus por completar nivel ==========
+    this.agregarPuntos(this.puntosporNivel);
+    // ========== FIN NUEVO ==========
+    
     const siguienteNivel = this.nivelActual + 1;
     
     if (this.niveles[siguienteNivel]) {
       setTimeout(() => {
-        this.mostrarMensajeNivel('¡NIVEL COMPLETADO!', 2000);
+        this.mostrarMensajeNivel('¡NIVEL COMPLETADO! +' + this.puntosporNivel + ' puntos', 2000);
         setTimeout(() => {
           this.iniciarNivel(siguienteNivel);
         }, 2500);
@@ -318,6 +427,11 @@ class SistemaNiveles {
     
     this.textoNivel.text = `Nivel ${this.nivelActual}`;
     this.textoZombies.text = `Hombres Lobo: ${zombiesRestantes}/${config.zombies}`;
+    
+    // ========== NUEVO: Actualizar scores ==========
+    this.textoScore.text = `Score: ${this.score}`;
+    this.textoHighScore.text = `High Score: ${this.highScore}`;
+    // ========== FIN NUEVO ==========
   }
 
   update() {

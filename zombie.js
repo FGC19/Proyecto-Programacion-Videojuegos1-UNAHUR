@@ -1,3 +1,228 @@
+// ============================================================
+// ESTADOS DE EMOCIÓN - Finite State Machine
+// ============================================================
+
+// Clase base para todos los estados
+class EstadoEmocional {
+  constructor(zombie) {
+    this.zombie = zombie;
+  }
+
+  // Métodos que cada estado debe implementar
+  entrar() {
+    // Código que se ejecuta al entrar al estado
+  }
+
+  salir() {
+    // Código que se ejecuta al salir del estado
+  }
+
+  actualizar() {
+    // Código que se ejecuta cada frame mientras está en este estado
+  }
+
+  verificarTransiciones() {
+    // Retorna el siguiente estado si debe cambiar, o null si permanece
+    return null;
+  }
+
+  obtenerMultiplicadorVelocidad() {
+    return 1;
+  }
+
+  obtenerMultiplicadorDanio() {
+    return 1;
+  }
+
+  obtenerMultiplicadorAnimacion() {
+    return 1;
+  }
+
+  obtenerSprite(tipoSprite) {
+    // Retorna el nombre del sprite a usar según el tipo
+    return tipoSprite;
+  }
+}
+
+// ============================================================
+// ESTADO NORMAL
+// ============================================================
+class EstadoNormal extends EstadoEmocional {
+  entrar() {
+    console.log("😐 Zombie en estado NORMAL");
+    
+    // Restaurar velocidad normal
+    this.zombie.velocidadMax = this.zombie.velocidadBase;
+    
+    // Restaurar color normal
+    this.zombie.container.tint = 0xffffff;
+    
+    // Restaurar velocidad de animaciones
+    Object.keys(this.zombie.spritesAnimados).forEach(key => {
+      if (this.zombie.spritesAnimados[key] && this.zombie.spritesAnimados[key].animationSpeed) {
+        this.zombie.spritesAnimados[key].animationSpeed = this.zombie.velocidadAnimacionBase;
+      }
+    });
+  }
+
+  salir() {
+    // Cleanup al salir del estado normal
+  }
+
+  actualizar() {
+    // Comportamiento específico del estado normal cada frame
+  }
+
+  verificarTransiciones() {
+    // Transición a ENOJADO si fue golpeado
+    if (this.zombie.fueGolpeado && this.zombie.vida > 0) {
+      return new EstadoEnojado(this.zombie);
+    }
+    return null;
+  }
+
+  obtenerMultiplicadorVelocidad() {
+    return 1;
+  }
+
+  obtenerMultiplicadorDanio() {
+    return 1;
+  }
+
+  obtenerMultiplicadorAnimacion() {
+    return 1;
+  }
+
+  obtenerSprite(tipoSprite) {
+    // Sprites normales
+    return tipoSprite; // "correr", "ataque1", "recibeTiro", etc.
+  }
+}
+
+// ============================================================
+// ESTADO ENOJADO
+// ============================================================
+class EstadoEnojado extends EstadoEmocional {
+  entrar() {
+    console.log("🔥 ¡Zombie ENOJADO!");
+    
+    // Aumentar velocidad
+    this.zombie.velocidadMax = this.zombie.velocidadBase * 1.8;
+    
+    // Cambiar color a rojo
+    this.zombie.container.tint = 0xff2222;
+    
+    // Efecto de parpadeo al enojarse
+    this.zombie.container.alpha = 0.7;
+    setTimeout(() => {
+      if (this.zombie.container) {
+        this.zombie.container.alpha = 1;
+      }
+    }, 100);
+    
+    // Aumentar velocidad de animaciones
+    Object.keys(this.zombie.spritesAnimados).forEach(key => {
+      if (this.zombie.spritesAnimados[key] && this.zombie.spritesAnimados[key].animationSpeed) {
+        this.zombie.spritesAnimados[key].animationSpeed = this.zombie.velocidadAnimacionBase * 1.5;
+      }
+    });
+    
+    console.log(`   Velocidad: ${this.zombie.velocidadMax.toFixed(2)}`);
+    console.log(`   Daño: ${this.obtenerMultiplicadorDanio() * this.zombie.danioBase}`);
+  }
+
+  salir() {
+    // Cleanup al salir del estado enojado
+    console.log("😌 Zombie dejó de estar enojado");
+  }
+
+  actualizar() {
+    // El zombie enojado podría tener comportamiento especial
+    // Por ejemplo: gruñir, emitir partículas de furia, etc.
+  }
+
+  verificarTransiciones() {
+    // El zombie permanece enojado hasta morir
+    // Puedes agregar condiciones para que se calme, por ejemplo:
+    // - Después de cierto tiempo
+    // - Si el jugador se aleja mucho
+    // - Si recibe curación, etc.
+    
+    return null; // Permanece enojado
+  }
+
+  obtenerMultiplicadorVelocidad() {
+    return 1.8; // 80% más rápido
+  }
+
+  obtenerMultiplicadorDanio() {
+    return 2.5; // 2.5x más daño
+  }
+
+  obtenerMultiplicadorAnimacion() {
+    return 1.5; // 50% más rápido
+  }
+
+  obtenerSprite(tipoSprite) {
+    // Sprites de enojo (usa las animaciones alternativas)
+    return tipoSprite + "Enojado"; // "correrEnojado", "ataque1Enojado", etc.
+  }
+}
+
+// ============================================================
+// MÁQUINA DE ESTADOS FINITOS (FSM)
+// ============================================================
+class MaquinaDeEstadosEmocionales {
+  constructor(zombie) {
+    this.zombie = zombie;
+    this.estadoActual = new EstadoNormal(zombie);
+    this.estadoActual.entrar();
+  }
+
+  cambiarEstado(nuevoEstado) {
+    if (!nuevoEstado) return;
+    
+    // Salir del estado actual
+    this.estadoActual.salir();
+    
+    // Cambiar al nuevo estado
+    this.estadoActual = nuevoEstado;
+    
+    // Entrar al nuevo estado
+    this.estadoActual.entrar();
+  }
+
+  actualizar() {
+    // Actualizar el estado actual
+    this.estadoActual.actualizar();
+    
+    // Verificar si debe cambiar de estado
+    const nuevoEstado = this.estadoActual.verificarTransiciones();
+    if (nuevoEstado) {
+      this.cambiarEstado(nuevoEstado);
+    }
+  }
+
+  obtenerMultiplicadorVelocidad() {
+    return this.estadoActual.obtenerMultiplicadorVelocidad();
+  }
+
+  obtenerMultiplicadorDanio() {
+    return this.estadoActual.obtenerMultiplicadorDanio();
+  }
+
+  obtenerSprite(tipoSprite) {
+    return this.estadoActual.obtenerSprite(tipoSprite);
+  }
+
+  esEnojado() {
+    return this.estadoActual instanceof EstadoEnojado;
+  }
+}
+
+// ============================================================
+// CLASE ZOMBIE ACTUALIZADA CON FSM
+// ============================================================
 class Zombie extends Objeto {
   constructor(x, y, velocidad, juego) {
     super(x, y, velocidad, juego);
@@ -10,20 +235,14 @@ class Zombie extends Objeto {
     this.debug = 0;
     this.radio = 20;
 
-    this.estadosEmocion = {
-      NORMAL: 'normal',
-      ENOJADO: 'enojado'
-    };
-    this.estadoEmocional = this.estadosEmocion.NORMAL;
+    // ========== NUEVO: FSM de estados emocionales ==========
+    this.fsmEmocional = null; // Se inicializa después de cargar sprites
     this.fueGolpeado = false;
+    // ========== FIN NUEVO ==========
     
     this.velocidadBase = velocidad;
     this.danioBase = 10;
     this.velocidadAnimacionBase = velocidad * 0.5;
-    
-    this.multiplicadorVelocidadEnojado = 1.8;
-    this.multiplicadorDanioEnojado = 2.5;
-    this.multiplicadorAnimacionEnojado = 1.5;
 
     this.spritesTotales = 11;
     this.spritesCargados = 0;
@@ -94,67 +313,33 @@ class Zombie extends Objeto {
     if (this.spritesCargados === this.spritesTotales) {
       console.log("✓ Todos los sprites del hombre lobo cargados!");
       this.listo = true;
+      
+      // ========== NUEVO: Inicializar FSM cuando los sprites están listos ==========
+      this.fsmEmocional = new MaquinaDeEstadosEmocionales(this);
+      // ========== FIN NUEVO ==========
+      
       this.cambiarSprite("correr");
     }
   }
 
-  cambiarEstadoEmocional(nuevoEstado) {
-    if (this.estadoEmocional === nuevoEstado) return;
-    
-    this.estadoEmocional = nuevoEstado;
-    
-    if (nuevoEstado === this.estadosEmocion.ENOJADO) {
-      this.velocidadMax = this.velocidadBase * this.multiplicadorVelocidadEnojado;
-      
-      Object.keys(this.spritesAnimados).forEach(key => {
-        if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
-          const velocidadOriginal = this.spritesAnimados[key].animationSpeed;
-          this.spritesAnimados[key].animationSpeed = velocidadOriginal * this.multiplicadorAnimacionEnojado;
-        }
-      });
-      
-      this.container.tint = 0xff2222;
-      this.container.alpha = 0.7;
-      setTimeout(() => {
-        if (this.container) this.container.alpha = 1;
-      }, 100);
-      
-      console.log("🔥 ¡Zombie ENOJADO! Vel:", this.velocidadMax.toFixed(2), "Daño:", this.obtenerDanioActual());
-      
-    } else if (nuevoEstado === this.estadosEmocion.NORMAL) {
-      this.velocidadMax = this.velocidadBase;
-      
-      Object.keys(this.spritesAnimados).forEach(key => {
-        if (this.spritesAnimados[key] && this.spritesAnimados[key].animationSpeed) {
-          const velocidadEnojada = this.spritesAnimados[key].animationSpeed;
-          this.spritesAnimados[key].animationSpeed = velocidadEnojada / this.multiplicadorAnimacionEnojado;
-        }
-      });
-      
-      this.container.tint = 0xffffff;
-    }
-  }
-
   obtenerDanioActual() {
-    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
-      return this.danioBase * this.multiplicadorDanioEnojado;
-    }
-    return this.danioBase;
+    if (!this.fsmEmocional) return this.danioBase;
+    return this.danioBase * this.fsmEmocional.obtenerMultiplicadorDanio();
   }
 
-  recibirTiro(origen) { // ← MODIFICADO: Ahora recibe el objeto que le pegó
+  recibirTiro(origen) {
     this.vida -= 1;
     
-    // ========== NUEVO: Generar partículas de sangre ==========
     if (this.juego.particleSystem && origen) {
       this.juego.particleSystem.hacerQueLeSalgaSangreAAlguien(this, origen);
     }
-    // ========== FIN NUEVO ==========
     
+    // ========== MODIFICADO: Marcar como golpeado para FSM ==========
     if (!this.fueGolpeado && this.vida > 0) {
       this.fueGolpeado = true;
-      this.cambiarEstadoEmocional(this.estadosEmocion.ENOJADO);
+      // La FSM detectará esto en verificarTransiciones()
     }
+    // ========== FIN MODIFICADO ==========
     
     if (this.vida <= 0) {
       this.juego.zombies = this.juego.zombies.filter((k) => k != this);
@@ -169,10 +354,12 @@ class Zombie extends Objeto {
         this.borrar();
       }, 800);
     } else {
-      const spriteHurt = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "recibeTiroEnojado" : "recibeTiro";
+      // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
+      const spriteHurt = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("recibeTiro") : "recibeTiro";
       let sprite = this.cambiarSprite(spriteHurt, 0, false);
       
-      const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
+      const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
+      // ========== FIN MODIFICADO ==========
       
       setTimeout(() => {
         if (this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
@@ -220,9 +407,13 @@ class Zombie extends Objeto {
     bordes = this.ajustarPorBordes();
     evasionObstaculos = this.resolverColisionesConObstaculos();
 
-    const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
+    // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
+    const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
+    const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
+    // ========== FIN MODIFICADO ==========
 
-    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
+    if (esEnojado) {
+      // Comportamiento cuando está enojado: solo perseguir
       if (this.estado == this.estados.YENDO_AL_PLAYER || this.estado == this.estados.IDLE) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
@@ -238,6 +429,7 @@ class Zombie extends Objeto {
         this.aplicarFuerza(sumaDeVectores);
       }
     } else {
+      // Comportamiento normal: con grupo
       if (this.estado == this.estados.YENDO_AL_PLAYER) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
@@ -291,6 +483,13 @@ class Zombie extends Objeto {
 
   update() {
     if (!this.listo) return;
+    
+    // ========== NUEVO: Actualizar FSM ==========
+    if (this.fsmEmocional) {
+      this.fsmEmocional.actualizar();
+    }
+    // ========== FIN NUEVO ==========
+    
     if (this.juego.contadorDeFrames % this.equipoParaUpdate == 0) {
       this.mirarAlrededor();
       this.segunDatosCambiarDeEstado();
@@ -353,7 +552,11 @@ class Zombie extends Objeto {
   }
 
   segunDatosCambiarDeEstado() {
-    if (this.estadoEmocional === this.estadosEmocion.ENOJADO) {
+    // ========== MODIFICADO: Usar FSM para saber si está enojado ==========
+    const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
+    // ========== FIN MODIFICADO ==========
+    
+    if (esEnojado) {
       if (this.estoyTocandoAlPlayer) {
         this.estado = this.estados.ATACANDO;
       } else {
@@ -383,20 +586,22 @@ class Zombie extends Objeto {
       if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
         const numAtaque = (Math.floor(Math.random() * 2) + 1).toString();
         
-        const spriteAtaque = this.estadoEmocional === this.estadosEmocion.ENOJADO 
-          ? "ataque" + numAtaque + "Enojado" 
+        // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
+        const spriteAtaque = this.fsmEmocional 
+          ? this.fsmEmocional.obtenerSprite("ataque" + numAtaque)
           : "ataque" + numAtaque;
+        // ========== FIN MODIFICADO ==========
         
         const sprite = this.cambiarSprite(spriteAtaque, 0, false);
 
         if (this.juego && this.juego.player && typeof this.juego.player.recibirDanio === 'function') {
           const danio = this.obtenerDanioActual();
-          this.juego.player.recibirDanio(danio, this); // ← MODIFICADO: Pasar referencia del zombie
+          this.juego.player.recibirDanio(danio, this);
         }
 
         this.ultimoAtaque = ahora;
 
-        const spriteCorrer = this.estadoEmocional === this.estadosEmocion.ENOJADO ? "correrEnojado" : "correr";
+        const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
 
         setTimeout(() => {
           if (this.estado === this.estados.ATACANDO || this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
