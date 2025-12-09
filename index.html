@@ -35,8 +35,10 @@
     <!-- Sistema de partículas -->
     <script src="particleSystem.js"></script>
     
-    <!-- IMPORTANTE: hombreLobo.js ANTES de bala.js y player.js -->
+    <!-- CRÍTICO: hombreLobo.js DEBE cargarse ANTES que bala.js y player.js -->
     <script src="hombreLobo.js"></script>
+    
+    <!-- Player y balas (que pueden referenciar a HombreLobo) -->
     <script src="bala.js"></script>
     <script src="player.js"></script>
     
