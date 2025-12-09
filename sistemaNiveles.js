@@ -2,31 +2,31 @@ class SistemaNiveles {
   constructor(juego) {
     this.juego = juego;
     this.nivelActual = 1;
-    this.zombiesEliminados = 0;
+    this.hombresLoboEliminados = 0;
     
     // ========== NUEVO: Sistema de Score ==========
     this.score = 0;
     this.highScore = this.cargarHighScore();
-    this.puntosporZombie = 10;
-    this.puntosporNivel = 500;
+    this.puntosPorHombreLobo = 10;
+    this.puntosPorNivel = 500;
     // ========== FIN NUEVO ==========
     
     // Configuración de niveles
     this.niveles = {
       1: {
-        zombies: 150,
+        hombresLobo: 150,
         arboles: 50,
-        zombiesParaPasar: 150,
-        velocidadZombiesMin: 0.5,
-        velocidadZombiesMax: 0.7,
+        hombresLoboParaPasar: 150,
+        velocidadHombresLoboMin: 0.5,
+        velocidadHombresLoboMax: 0.7,
         mensajeBienvenida: "NIVEL 1 - Sobrevive y elimina a todos los Hombres Lobo"
       },
       2: {
-        zombies: 400,
+        hombresLobo: 400,
         arboles: 80,
-        zombiesParaPasar: 400,
-        velocidadZombiesMin: 0.7,
-        velocidadZombiesMax: 1.0,
+        hombresLoboParaPasar: 400,
+        velocidadHombresLoboMin: 0.7,
+        velocidadHombresLoboMax: 1.0,
         mensajeBienvenida: "NIVEL 2 - ¡La horda se intensifica!"
       }
     };
@@ -36,12 +36,12 @@ class SistemaNiveles {
 
   // ========== NUEVO: Métodos de Score ==========
   cargarHighScore() {
-    const saved = localStorage.getItem('zombieHighScore');
+    const saved = localStorage.getItem('hombreLoboHighScore');
     return saved ? parseInt(saved) : 0;
   }
 
   guardarHighScore() {
-    localStorage.setItem('zombieHighScore', this.highScore.toString());
+    localStorage.setItem('hombreLoboHighScore', this.highScore.toString());
   }
 
   agregarPuntos(puntos) {
@@ -87,16 +87,16 @@ class SistemaNiveles {
     this.textoNivel.position.set(20, 20);
     this.uiContainer.addChild(this.textoNivel);
 
-    // Texto de zombies restantes
-    this.textoZombies = new PIXI.Text('Hombres Lobo: 150/150', {
+    // Texto de hombres lobo restantes
+    this.textoHombresLobo = new PIXI.Text('Hombres Lobo: 150/150', {
       fontFamily: 'Arial',
       fontSize: 24,
       fill: 0xFF4444,
       stroke: 0x000000,
       strokeThickness: 3
     });
-    this.textoZombies.position.set(20, 60);
-    this.uiContainer.addChild(this.textoZombies);
+    this.textoHombresLobo.position.set(20, 60);
+    this.uiContainer.addChild(this.textoHombresLobo);
 
     // ========== NUEVO: UI de Score ==========
     // Score actual
@@ -316,19 +316,19 @@ class SistemaNiveles {
 
   iniciarNivel(nivel) {
     this.nivelActual = nivel;
-    this.zombiesEliminados = 0;
+    this.hombresLoboEliminados = 0;
     
     const config = this.niveles[nivel];
     
     // Limpiar nivel anterior
     this.limpiarNivel();
     
-    // Crear nuevo nivel - IGUAL QUE EN EL ORIGINAL
+    // Crear nuevo nivel
     this.juego.ponerArboles(config.arboles);
-    this.juego.ponerZombiesConConfiguracion(
-      config.zombies,
-      config.velocidadZombiesMin,
-      config.velocidadZombiesMax
+    this.juego.ponerHombresLoboConConfiguracion(
+      config.hombresLobo,
+      config.velocidadHombresLoboMin,
+      config.velocidadHombresLoboMax
     );
     
     // Mostrar mensaje
@@ -360,12 +360,12 @@ class SistemaNiveles {
   }
 
   limpiarNivel() {
-    // Eliminar todos los zombies - IGUAL QUE EN EL ORIGINAL
-    this.juego.zombies.forEach(z => {
-      this.juego.app.stage.removeChild(z.container);
-      this.juego.grid.remove(z);
+    // Eliminar todos los hombres lobo
+    this.juego.hombresLobo.forEach(hl => {
+      this.juego.app.stage.removeChild(hl.container);
+      this.juego.grid.remove(hl);
     });
-    this.juego.zombies = [];
+    this.juego.hombresLobo = [];
 
     // Eliminar todos los árboles
     if (this.juego.arboles) {
@@ -385,32 +385,32 @@ class SistemaNiveles {
     this.juego.obstaculos = [];
   }
 
-  zombieEliminado() {
-    this.zombiesEliminados++;
+  hombreLoboEliminado() {
+    this.hombresLoboEliminados++;
     
-    // ========== NUEVO: Agregar puntos al eliminar zombie ==========
-    this.agregarPuntos(this.puntosporZombie);
+    // ========== NUEVO: Agregar puntos al eliminar hombre lobo ==========
+    this.agregarPuntos(this.puntosPorHombreLobo);
     // ========== FIN NUEVO ==========
     
     this.actualizarUI();
     
     // Verificar si pasó el nivel
     const config = this.niveles[this.nivelActual];
-    if (this.zombiesEliminados >= config.zombiesParaPasar) {
+    if (this.hombresLoboEliminados >= config.hombresLoboParaPasar) {
       this.pasarSiguienteNivel();
     }
   }
 
   pasarSiguienteNivel() {
     // ========== NUEVO: Bonus por completar nivel ==========
-    this.agregarPuntos(this.puntosporNivel);
+    this.agregarPuntos(this.puntosPorNivel);
     // ========== FIN NUEVO ==========
     
     const siguienteNivel = this.nivelActual + 1;
     
     if (this.niveles[siguienteNivel]) {
       setTimeout(() => {
-        this.mostrarMensajeNivel('¡NIVEL COMPLETADO! +' + this.puntosporNivel + ' puntos', 2000);
+        this.mostrarMensajeNivel('¡NIVEL COMPLETADO! +' + this.puntosPorNivel + ' puntos', 2000);
         setTimeout(() => {
           this.iniciarNivel(siguienteNivel);
         }, 2500);
@@ -423,10 +423,10 @@ class SistemaNiveles {
 
   actualizarUI() {
     const config = this.niveles[this.nivelActual];
-    const zombiesRestantes = this.juego.zombies.length;
+    const hombresLoboRestantes = this.juego.hombresLobo.length;
     
     this.textoNivel.text = `Nivel ${this.nivelActual}`;
-    this.textoZombies.text = `Hombres Lobo: ${zombiesRestantes}/${config.zombies}`;
+    this.textoHombresLobo.text = `Hombres Lobo: ${hombresLoboRestantes}/${config.hombresLobo}`;
     
     // ========== NUEVO: Actualizar scores ==========
     this.textoScore.text = `Score: ${this.score}`;
