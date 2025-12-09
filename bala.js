@@ -1,9 +1,9 @@
 class Bala extends Objeto {
-  constructor(x, y, juego, velX, velY, origen) { // ← NUEVO: recibe origen (el jugador)
+  constructor(x, y, juego, velX, velY, origen) {
     super(x, y, 20, juego);
     this.velocidad.x = velX;
     this.velocidad.y = velY;
-    this.origen = origen; // ← NUEVO: Guardar quién disparó
+    this.origen = origen; // Guardar quién disparó
 
     this.juego = juego;
     this.grid = juego.grid;
@@ -40,10 +40,10 @@ class Bala extends Objeto {
 
     let objs = Object.values(
       (this.miCeldaActual || {}).objetosAca || {}
-    ).filter((k) => k instanceof Zombie);
+    ).filter((k) => k instanceof HombreLobo);
     
     if (objs.length > 0) {
-      let elZombieMasCercano;
+      let elHombreLoboMasCercano;
       let distMin = 99999;
       let cual = null;
       
@@ -61,7 +61,7 @@ class Bala extends Objeto {
       }
       
       if (cual != null) {
-        objs[cual].recibirTiro(this.origen); // ← MODIFICADO: Pasar el origen (jugador)
+        objs[cual].recibirTiro(this.origen); // Pasar el origen (jugador)
         this.borrar();
       }
     }
