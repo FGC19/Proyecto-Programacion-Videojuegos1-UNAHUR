@@ -47,7 +47,6 @@ class Player extends Objeto {
       this.juego.mouse.y - this.app.stage.y - this.container.y
     );
     
-    // ← MODIFICADO: Pasar referencia del jugador (this) como origen
     this.juego.balas.push(
       new Bala(
         this.container.x,
@@ -55,7 +54,7 @@ class Player extends Objeto {
         this.juego,
         Math.sin(angulo),
         Math.cos(angulo),
-        this // ← NUEVO: Pasar el jugador como origen
+        this
       )
     );
 
@@ -103,7 +102,7 @@ class Player extends Objeto {
     super.update();
 
     this.resolverColisionesConObstaculos();
-    this.verificarColisionesConZombies();
+    this.verificarColisionesConHombresLobo();
     
     if (this.invulnerable) {
       this.container.alpha = Math.sin(Date.now() * 0.02) * 0.5 + 0.5;
@@ -136,34 +135,32 @@ class Player extends Objeto {
     }
   }
 
-  verificarColisionesConZombies() {
+  verificarColisionesConHombresLobo() {
     if (this.invulnerable) return;
     
-    for (let zombie of this.juego.zombies) {
-      if (!zombie.listo) continue;
+    for (let hombreLobo of this.juego.hombresLobo) {
+      if (!hombreLobo.listo) continue;
       
-      const dx = this.container.x - zombie.container.x;
-      const dy = this.container.y - zombie.container.y;
+      const dx = this.container.x - hombreLobo.container.x;
+      const dy = this.container.y - hombreLobo.container.y;
       const distancia = Math.sqrt(dx * dx + dy * dy);
-      const radioTotal = this.radio + zombie.radio;
+      const radioTotal = this.radio + hombreLobo.radio;
       
       if (distancia < radioTotal) {
-        this.recibirDanio(5, zombie); // ← MODIFICADO: Pasar el zombie que causó el daño
+        this.recibirDanio(5, hombreLobo);
         break;
       }
     }
   }
 
-  recibirDanio(cantidad, origen) { // ← MODIFICADO: Ahora recibe el objeto que causó el daño
+  recibirDanio(cantidad, origen) {
     if (this.invulnerable) return;
     
     this.vida -= cantidad;
     
-    // ========== NUEVO: Generar partículas de sangre ==========
     if (this.juego.particleSystem && origen) {
       this.juego.particleSystem.hacerQueLeSalgaSangreAAlguien(this, origen);
     }
-    // ========== FIN NUEVO ==========
     
     if (this.vida < 0) this.vida = 0;
     
