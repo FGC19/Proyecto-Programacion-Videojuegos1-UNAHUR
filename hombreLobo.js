@@ -204,6 +204,12 @@ class HombreLobo extends Objeto {
     this.spritesTotales = 11;
     this.spritesCargados = 0;
 
+    this.estados = { IDLE: 0, YENDO_AL_PLAYER: 1, ATACANDO: 2 };
+    this.estado = this.estados.IDLE;
+    this.ultimoAtaque = 0;
+    this.cooldownAtaque = 500;
+    this.cooldownAtaqueEnojado = 300; // Ataca más rápido cuando está enojado
+
     this.cargarSpriteAnimado("./img/hombresloboWalk.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
       this.spritesAnimados.correr = sprite;
       this.verificarCargaCompleta();
@@ -361,7 +367,26 @@ class HombreLobo extends Objeto {
     const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
 
     if (esEnojado) {
-      if (this.estado == this.estados.YENDO_AL_PLAYER || this.estado == this.estados.IDLE) {
+      if (this.estado == this.estados.YENDO_AL_PLAYER) {
+        vecAtraccionAlPlayer = this.atraccionAlJugador();
+        this.cambiarSprite(spriteCorrer);
+        
+        // Verificar si está cerca del jugador para atacar automáticamente
+        if (this.distanciaAlPlayer && this.distanciaAlPlayer < this.juego.grid.cellSize * 1.5) {
+          this.estado = this.estados.ATACANDO;
+          this.atacar();
+        }
+        
+        sumaDeVectores.x += (vecAtraccionAlPlayer || {}).x || 0;
+        sumaDeVectores.x += (bordes || {}).x || 0;
+        sumaDeVectores.x += (evasionObstaculos || {}).x || 0;
+
+        sumaDeVectores.y += (vecAtraccionAlPlayer || {}).y || 0;
+        sumaDeVectores.y += (bordes || {}).y || 0;
+        sumaDeVectores.y += (evasionObstaculos || {}).y || 0;
+
+        this.aplicarFuerza(sumaDeVectores);
+      } else if (this.estado == this.estados.IDLE) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
         
@@ -499,10 +524,15 @@ class HombreLobo extends Objeto {
     const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
     
     if (esEnojado) {
-      if (this.estoyTocandoAlPlayer) {
+      // Rango de ataque más amplio para lobos enojados
+      const rangoAtaque = this.juego.grid.cellSize * 1.5;
+      
+      if (this.distanciaAlPlayer && this.distanciaAlPlayer < rangoAtaque) {
         this.estado = this.estados.ATACANDO;
-      } else {
+      } else if (this.estoyViendoAlPlayer || this.distanciaAlPlayer) {
         this.estado = this.estados.YENDO_AL_PLAYER;
+      } else {
+        this.estado = this.estados.IDLE;
       }
     } else {
       if (this.estoyTocandoAlPlayer) {
@@ -525,7 +555,12 @@ class HombreLobo extends Objeto {
         this.juego.player.container.y
       );
 
-      if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
+      // Usar cooldown diferente según si está enojado o no
+      const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
+      const cooldown = esEnojado ? this.cooldownAtaqueEnojado : this.cooldownAtaque;
+      const rangoAtaque = esEnojado ? this.juego.grid.cellSize * 1.5 : this.juego.grid.cellSize;
+
+      if (ahora - this.ultimoAtaque >= cooldown && distanciaAlPlayer < rangoAtaque) {
         const numAtaque = (Math.floor(Math.random() * 2) + 1).toString();
         
         const spriteAtaque = this.fsmEmocional 
@@ -542,12 +577,15 @@ class HombreLobo extends Objeto {
         this.ultimoAtaque = ahora;
 
         const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
+        
+        // Animación de ataque más corta cuando está enojado
+        const duracionAtaque = esEnojado ? 250 : 350;
 
         setTimeout(() => {
           if (this.estado === this.estados.ATACANDO || this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
             this.cambiarSprite(spriteCorrer);
           }
-        }, 350);
+        }, duracionAtaque);
       }
     } catch (e) {
       // Silenciar errores
@@ -654,13 +692,31 @@ class HombreLobo extends Objeto {
 
   ajustarPorBordes() {
     let fuerza = new PIXI.Point(0, 0);
+    const margen = 20;
 
-    if (this.container.x < 0) fuerza.x = -this.container.x;
-    if (this.container.y < 0) fuerza.y = -this.container.y;
-    if (this.container.x > this.juego.canvasWidth)
-      fuerza.x = -(this.container.x - this.juego.canvasWidth);
-    if (this.container.y > this.juego.canvasHeight)
-      fuerza.y = -(this.container.y - this.juego.canvasHeight);
+    // Límite izquierdo
+    if (this.container.x < margen) {
+      this.container.x = margen;
+      fuerza.x = 1;
+    }
+    
+    // Límite superior
+    if (this.container.y < margen) {
+      this.container.y = margen;
+      fuerza.y = 1;
+    }
+    
+    // Límite derecho
+    if (this.container.x > this.juego.canvasWidth - margen) {
+      this.container.x = this.juego.canvasWidth - margen;
+      fuerza.x = -1;
+    }
+    
+    // Límite inferior
+    if (this.container.y > this.juego.canvasHeight - margen) {
+      this.container.y = this.juego.canvasHeight - margen;
+      fuerza.y = -1;
+    }
 
     return fuerza;
   }
