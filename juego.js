@@ -225,3 +225,4 @@ class Juego {
 
 // Inicializar el juego
 let juego = new Juego();
+
