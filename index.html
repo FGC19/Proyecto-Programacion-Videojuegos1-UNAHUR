@@ -16,18 +16,34 @@
 <body>
     
     <script src="https://pixijs.download/v6.5.8/pixi.min.js"></script>
+    
+    <!-- Utilitarios y constantes primero -->
     <script src="utils.js"></script>
     <script src="constantes.js"></script>
+    
+    <!-- Sistema de celdas -->
     <script src="cell.js"></script>
     <script src="grid.js"></script>
+    
+    <!-- Clases base -->
     <script src="objeto.js"></script>
     <script src="entidadEstatica.js"></script>
+    
+    <!-- Entidades estáticas -->
     <script src="arbol.js"></script>
-     <script src="particleSystem.js"></script>
+    
+    <!-- Sistema de partículas -->
+    <script src="particleSystem.js"></script>
+    
+    <!-- IMPORTANTE: hombreLobo.js ANTES de bala.js y player.js -->
+    <script src="hombreLobo.js"></script>
     <script src="bala.js"></script>
     <script src="player.js"></script>
-    <script src="zombie.js"></script>
-    <script src="sistemaNiveles.js"></script> <!-- ← NUEVO -->
+    
+    <!-- Sistemas del juego -->
+    <script src="sistemaNiveles.js"></script>
+    
+    <!-- Juego principal (SIEMPRE AL FINAL) -->
     <script src="juego.js"></script>
 </body>
 
