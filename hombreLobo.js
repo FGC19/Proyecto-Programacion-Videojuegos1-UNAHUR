@@ -180,7 +180,7 @@ class MaquinaDeEstadosEmocionales {
 }
 
 // ============================================================
-// CLASE HOMBRE LOBO ACTUALIZADA CON FSM
+// CLASE HOMBRE LOBO
 // ============================================================
 class HombreLobo extends Objeto {
   constructor(x, y, velocidad, juego) {
@@ -201,86 +201,76 @@ class HombreLobo extends Objeto {
     this.danioBase = 10;
     this.velocidadAnimacionBase = velocidad * 0.5;
 
-    this.spritesTotales = 11;
-    this.spritesCargados = 0;
-
     this.estados = { IDLE: 0, YENDO_AL_PLAYER: 1, ATACANDO: 2 };
     this.estado = this.estados.IDLE;
     this.ultimoAtaque = 0;
     this.cooldownAtaque = 500;
-    this.cooldownAtaqueEnojado = 300; // Ataca más rápido cuando está enojado
+    this.cooldownAtaqueEnojado = 300;
 
-    this.cargarSpriteAnimado("./img/hombresloboWalk.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.correr = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombresloboAttack_1.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque1 = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombresloboAttack_2.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque2 = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombresloboAttack_3.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque3 = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombresloboDead.png", 128, 128, this.velocidadAnimacionBase * 0.5, (sprite) => {
-      this.spritesAnimados.morir = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombresloboHurt.png", 128, 128, this.velocidadAnimacionBase * 1.5, (sprite) => {
-      this.spritesAnimados.recibeTiro = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.correrEnojado = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque1Enojado = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque2Enojado = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase, (sprite) => {
-      this.spritesAnimados.ataque3Enojado = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.cargarSpriteAnimado("./img/hombreslobo.png", 128, 128, this.velocidadAnimacionBase * 1.5, (sprite) => {
-      this.spritesAnimados.recibeTiroEnojado = sprite;
-      this.verificarCargaCompleta();
-    });
-
-    this.estados = { IDLE: 0, YENDO_AL_PLAYER: 1, ATACANDO: 2 };
-    this.estado = this.estados.IDLE;
-    this.ultimoAtaque = 0;
-    this.cooldownAtaque = 500;
+    // Cargar sprites usando el cache global
+    this.inicializarSprites();
   }
 
-  verificarCargaCompleta() {
-    this.spritesCargados++;
-    if (this.spritesCargados === this.spritesTotales) {
-      console.log("✓ Todos los sprites del hombre lobo cargados!");
-      this.listo = true;
+  async inicializarSprites() {
+    // Esperar a que las texturas globales estén cargadas
+    await HombreLobo.cargarTexturasGlobales();
+    
+    // Crear sprites animados a partir del cache
+    this.crearSpritesDesdeCache();
+    
+    this.listo = true;
+    this.fsmEmocional = new MaquinaDeEstadosEmocionales(this);
+    this.cambiarSprite("correr");
+  }
+
+  crearSpritesDesdeCache() {
+    const specs = {
+      correr: { url: "./img/hombresloboWalk.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque1: { url: "./img/hombresloboAttack_1.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque2: { url: "./img/hombresloboAttack_2.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque3: { url: "./img/hombresloboAttack_3.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      morir: { url: "./img/hombresloboDead.png", w: 128, h: 128, speed: this.velocidadAnimacionBase * 0.5 },
+      recibeTiro: { url: "./img/hombresloboHurt.png", w: 128, h: 128, speed: this.velocidadAnimacionBase * 1.5 },
+      correrEnojado: { url: "./img/hombreslobo.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque1Enojado: { url: "./img/hombreslobo.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque2Enojado: { url: "./img/hombreslobo.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      ataque3Enojado: { url: "./img/hombreslobo.png", w: 128, h: 128, speed: this.velocidadAnimacionBase },
+      recibeTiroEnojado: { url: "./img/hombreslobo.png", w: 128, h: 128, speed: this.velocidadAnimacionBase * 1.5 }
+    };
+    
+    Object.keys(specs).forEach(key => {
+      const spec = specs[key];
+      const texture = HombreLobo.texturasCache[key];
       
-      this.fsmEmocional = new MaquinaDeEstadosEmocionales(this);
+      if (!texture || !texture.baseTexture.valid) return;
       
-      this.cambiarSprite("correr");
-    }
+      const width = texture.baseTexture.width;
+      const height = texture.baseTexture.height;
+      const cantFramesX = Math.floor(width / spec.w);
+      const cantFramesY = Math.floor(height / spec.h);
+      
+      const frames = [];
+      for (let i = 0; i < cantFramesX; i++) {
+        for (let j = 0; j < cantFramesY; j++) {
+          const rectangle = new PIXI.Rectangle(
+            i * spec.w,
+            j * spec.h,
+            spec.w,
+            spec.h
+          );
+          const frame = new PIXI.Texture(texture.baseTexture, rectangle);
+          frames.push(frame);
+        }
+      }
+      
+      const animatedSprite = new PIXI.AnimatedSprite(frames);
+      animatedSprite.animationSpeed = spec.speed;
+      animatedSprite.loop = true;
+      animatedSprite.anchor.set(0.5, 1);
+      animatedSprite.play();
+      
+      this.spritesAnimados[key] = animatedSprite;
+    });
   }
 
   obtenerDanioActual() {
@@ -371,7 +361,6 @@ class HombreLobo extends Objeto {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
         
-        // Verificar si está cerca del jugador para atacar automáticamente
         if (this.distanciaAlPlayer && this.distanciaAlPlayer < this.juego.grid.cellSize * 1.5) {
           this.estado = this.estados.ATACANDO;
           this.atacar();
@@ -524,7 +513,6 @@ class HombreLobo extends Objeto {
     const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
     
     if (esEnojado) {
-      // Rango de ataque más amplio para lobos enojados
       const rangoAtaque = this.juego.grid.cellSize * 1.5;
       
       if (this.distanciaAlPlayer && this.distanciaAlPlayer < rangoAtaque) {
@@ -555,7 +543,6 @@ class HombreLobo extends Objeto {
         this.juego.player.container.y
       );
 
-      // Usar cooldown diferente según si está enojado o no
       const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
       const cooldown = esEnojado ? this.cooldownAtaqueEnojado : this.cooldownAtaque;
       const rangoAtaque = esEnojado ? this.juego.grid.cellSize * 1.5 : this.juego.grid.cellSize;
@@ -578,7 +565,6 @@ class HombreLobo extends Objeto {
 
         const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
         
-        // Animación de ataque más corta cuando está enojado
         const duracionAtaque = esEnojado ? 250 : 350;
 
         setTimeout(() => {
@@ -694,25 +680,21 @@ class HombreLobo extends Objeto {
     let fuerza = new PIXI.Point(0, 0);
     const margen = 20;
 
-    // Límite izquierdo
     if (this.container.x < margen) {
       this.container.x = margen;
       fuerza.x = 1;
     }
     
-    // Límite superior
     if (this.container.y < margen) {
       this.container.y = margen;
       fuerza.y = 1;
     }
     
-    // Límite derecho
     if (this.container.x > this.juego.canvasWidth - margen) {
       this.container.x = this.juego.canvasWidth - margen;
       fuerza.x = -1;
     }
     
-    // Límite inferior
     if (this.container.y > this.juego.canvasHeight - margen) {
       this.container.y = this.juego.canvasHeight - margen;
       fuerza.y = -1;
@@ -741,3 +723,56 @@ class HombreLobo extends Objeto {
     };
   }
 }
+
+// ============================================================
+// CACHE GLOBAL DE TEXTURAS - DEFINIDO AL FINAL
+// ============================================================
+HombreLobo.texturasCargadas = false;
+HombreLobo.texturasCache = {};
+HombreLobo.cargandoTexturas = false;
+HombreLobo.promesaCarga = null;
+
+HombreLobo.cargarTexturasGlobales = function() {
+  if (HombreLobo.texturasCargadas) {
+    return Promise.resolve();
+  }
+  
+  if (HombreLobo.cargandoTexturas) {
+    return HombreLobo.promesaCarga;
+  }
+  
+  HombreLobo.cargandoTexturas = true;
+  console.log("🎨 Cargando texturas de HombreLobo (primera vez)...");
+  
+  const urls = {
+    correr: "./img/hombresloboWalk.png",
+    ataque1: "./img/hombresloboAttack_1.png",
+    ataque2: "./img/hombresloboAttack_2.png",
+    ataque3: "./img/hombresloboAttack_3.png",
+    morir: "./img/hombresloboDead.png",
+    recibeTiro: "./img/hombresloboHurt.png",
+    correrEnojado: "./img/hombreslobo.png",
+    ataque1Enojado: "./img/hombreslobo.png",
+    ataque2Enojado: "./img/hombreslobo.png",
+    ataque3Enojado: "./img/hombreslobo.png",
+    recibeTiroEnojado: "./img/hombreslobo.png"
+  };
+  
+  const promesas = Object.keys(urls).map(key => {
+    return new Promise((resolve) => {
+      const texture = PIXI.Texture.from(urls[key]);
+      texture.baseTexture.on("loaded", () => {
+        HombreLobo.texturasCache[key] = texture;
+        resolve();
+      });
+    });
+  });
+  
+  HombreLobo.promesaCarga = Promise.all(promesas).then(() => {
+    HombreLobo.texturasCargadas = true;
+    HombreLobo.cargandoTexturas = false;
+    console.log("✅ Texturas de HombreLobo cargadas!");
+  });
+  
+  return HombreLobo.promesaCarga;
+};
