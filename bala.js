@@ -3,7 +3,7 @@ class Bala extends Objeto {
     super(x, y, 20, juego);
     this.velocidad.x = velX;
     this.velocidad.y = velY;
-    this.origen = origen; // Guardar quién disparó
+    this.origen = origen;
 
     this.juego = juego;
     this.grid = juego.grid;
@@ -29,13 +29,16 @@ class Bala extends Objeto {
   update() {
     super.update();
 
+    // Verificar límites del mapa con un pequeño margen
+    const margen = 50;
     if (
-      this.container.x < 0 ||
-      this.container.y > this.juego.canvasHeight ||
-      this.container.y < 0 ||
-      this.container.x > this.juego.canvasWidth 
+      this.container.x < -margen ||
+      this.container.x > this.juego.canvasWidth + margen ||
+      this.container.y < -margen ||
+      this.container.y > this.juego.canvasHeight + margen
     ) {
       this.borrar();
+      return;
     }
 
     let objs = Object.values(
@@ -61,7 +64,7 @@ class Bala extends Objeto {
       }
       
       if (cual != null) {
-        objs[cual].recibirTiro(this.origen); // Pasar el origen (jugador)
+        objs[cual].recibirTiro(this.origen);
         this.borrar();
       }
     }
