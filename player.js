@@ -103,6 +103,7 @@ class Player extends Objeto {
 
     this.resolverColisionesConObstaculos();
     this.verificarColisionesConHombresLobo();
+    this.aplicarLimitesDeMapa();
     
     if (this.invulnerable) {
       this.container.alpha = Math.sin(Date.now() * 0.02) * 0.5 + 0.5;
@@ -150,6 +151,34 @@ class Player extends Objeto {
         this.recibirDanio(5, hombreLobo);
         break;
       }
+    }
+  }
+
+  aplicarLimitesDeMapa() {
+    const margen = 20; // Margen desde el borde
+    
+    // Límite izquierdo
+    if (this.container.x < margen) {
+      this.container.x = margen;
+      this.velocidad.x = 0;
+    }
+    
+    // Límite derecho
+    if (this.container.x > this.juego.canvasWidth - margen) {
+      this.container.x = this.juego.canvasWidth - margen;
+      this.velocidad.x = 0;
+    }
+    
+    // Límite superior
+    if (this.container.y < margen) {
+      this.container.y = margen;
+      this.velocidad.y = 0;
+    }
+    
+    // Límite inferior
+    if (this.container.y > this.juego.canvasHeight - margen) {
+      this.container.y = this.juego.canvasHeight - margen;
+      this.velocidad.y = 0;
     }
   }
 
