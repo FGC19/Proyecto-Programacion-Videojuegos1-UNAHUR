@@ -14,7 +14,7 @@ class Juego {
     this.gridActualizacionIntervalo = 10;
     this.contadorDeFrames = 0;
     this.grid = new Grid(50, this);
-    this.zombies = [];
+    this.hombresLobo = [];
     this.balas = [];
     this.obstaculos = [];
     this.arboles = [];
@@ -80,31 +80,31 @@ class Juego {
     }
   }
 
-  ponerZombies(cant) {
+  ponerHombresLobo(cant) {
     for (let i = 0; i < cant; i++) {
       let velocidad = Math.random() * 0.2 + 0.5;
-      const zombie = new Zombie(
+      const hombreLobo = new HombreLobo(
         Math.random() * this.canvasWidth,
         Math.random() * this.canvasHeight,
         velocidad,
         this
       );
-      this.zombies.push(zombie);
-      this.grid.add(zombie);
+      this.hombresLobo.push(hombreLobo);
+      this.grid.add(hombreLobo);
     }
   }
 
-  ponerZombiesConConfiguracion(cant, velocidadMin, velocidadMax) {
+  ponerHombresLoboConConfiguracion(cant, velocidadMin, velocidadMax) {
     for (let i = 0; i < cant; i++) {
       let velocidad = Math.random() * (velocidadMax - velocidadMin) + velocidadMin;
-      const zombie = new Zombie(
+      const hombreLobo = new HombreLobo(
         Math.random() * this.canvasWidth,
         Math.random() * this.canvasHeight,
         velocidad,
         this
       );
-      this.zombies.push(zombie);
-      this.grid.add(zombie);
+      this.hombresLobo.push(hombreLobo);
+      this.grid.add(hombreLobo);
     }
   }
 
@@ -161,8 +161,8 @@ class Juego {
 
     this.player.update();
     
-    this.zombies.forEach((zombie) => {
-      zombie.update();
+    this.hombresLobo.forEach((hombreLobo) => {
+      hombreLobo.update();
     });
     
     this.balas.forEach((bala) => {
