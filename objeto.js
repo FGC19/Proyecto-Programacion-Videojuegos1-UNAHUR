@@ -87,8 +87,8 @@ class Objeto {
 
   borrar() {
     this.juego.app.stage.removeChild(this.container);
-    if (this instanceof Zombie) {
-      this.juego.zombies = this.juego.zombies.filter((k) => k != this);
+    if (this instanceof HombreLobo) {
+      this.juego.hombresLobo = this.juego.hombresLobo.filter((k) => k != this);
     } else if (this instanceof Bala) {
       this.juego.balas = this.juego.balas.filter((k) => k != this);
     }
@@ -177,7 +177,7 @@ class Objeto {
     }
   }
 
-  // ← NUEVO: Método para verificar colisiones con obstáculos
+  // Método para verificar colisiones con obstáculos
   verificarColisionesConObstaculos() {
     if (!this.juego.obstaculos || this.esEstatico) return null;
     
@@ -216,7 +216,7 @@ class Objeto {
       this.container.scale.x = 1;
     } else if (this.velocidad.x < 0) {
       this.container.scale.x = -1;
-    } else if (this.velocidad.y == 0 && this instanceof Zombie) {
+    } else if (this.velocidad.y == 0 && this instanceof HombreLobo) {
       if (this.juego.player.container.x > this.container.x) {
         this.container.scale.x = 1;
       } else {
@@ -236,19 +236,3 @@ class Objeto {
     }
   }
 }
-
-// Modificar el método update() en la clase Objeto para incluir colisiones:
-// Agregar antes de super.update() en Player y Zombie:
-/*
-update() {
-  // ... código existente ...
-  
-  // Verificar colisiones con obstáculos
-  const repulsion = this.verificarColisionesConObstaculos();
-  if (repulsion) {
-    this.aplicarFuerza(repulsion);
-  }
-  
-  super.update();
-}
-*/
