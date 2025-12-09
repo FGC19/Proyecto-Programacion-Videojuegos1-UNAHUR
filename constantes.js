@@ -3,7 +3,7 @@ const Z_INDEX = {
   fondo: 0,
   arboles: 100,
   personajes: 200,
-  zombies: 200,
+  hombresLobo: 200,
   player: 250,
   balas: 300,
   faroles: 150,
