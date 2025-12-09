@@ -4,25 +4,14 @@
 
 // Clase base para todos los estados
 class EstadoEmocional {
-  constructor(zombie) {
-    this.zombie = zombie;
+  constructor(hombreLobo) {
+    this.hombreLobo = hombreLobo;
   }
 
-  // Métodos que cada estado debe implementar
-  entrar() {
-    // Código que se ejecuta al entrar al estado
-  }
-
-  salir() {
-    // Código que se ejecuta al salir del estado
-  }
-
-  actualizar() {
-    // Código que se ejecuta cada frame mientras está en este estado
-  }
-
+  entrar() {}
+  salir() {}
+  actualizar() {}
   verificarTransiciones() {
-    // Retorna el siguiente estado si debe cambiar, o null si permanece
     return null;
   }
 
@@ -39,7 +28,6 @@ class EstadoEmocional {
   }
 
   obtenerSprite(tipoSprite) {
-    // Retorna el nombre del sprite a usar según el tipo
     return tipoSprite;
   }
 }
@@ -49,34 +37,24 @@ class EstadoEmocional {
 // ============================================================
 class EstadoNormal extends EstadoEmocional {
   entrar() {
-    console.log("😐 Zombie en estado NORMAL");
+    console.log("😐 Hombre Lobo en estado NORMAL");
     
-    // Restaurar velocidad normal
-    this.zombie.velocidadMax = this.zombie.velocidadBase;
+    this.hombreLobo.velocidadMax = this.hombreLobo.velocidadBase;
+    this.hombreLobo.container.tint = 0xffffff;
     
-    // Restaurar color normal
-    this.zombie.container.tint = 0xffffff;
-    
-    // Restaurar velocidad de animaciones
-    Object.keys(this.zombie.spritesAnimados).forEach(key => {
-      if (this.zombie.spritesAnimados[key] && this.zombie.spritesAnimados[key].animationSpeed) {
-        this.zombie.spritesAnimados[key].animationSpeed = this.zombie.velocidadAnimacionBase;
+    Object.keys(this.hombreLobo.spritesAnimados).forEach(key => {
+      if (this.hombreLobo.spritesAnimados[key] && this.hombreLobo.spritesAnimados[key].animationSpeed) {
+        this.hombreLobo.spritesAnimados[key].animationSpeed = this.hombreLobo.velocidadAnimacionBase;
       }
     });
   }
 
-  salir() {
-    // Cleanup al salir del estado normal
-  }
-
-  actualizar() {
-    // Comportamiento específico del estado normal cada frame
-  }
+  salir() {}
+  actualizar() {}
 
   verificarTransiciones() {
-    // Transición a ENOJADO si fue golpeado
-    if (this.zombie.fueGolpeado && this.zombie.vida > 0) {
-      return new EstadoEnojado(this.zombie);
+    if (this.hombreLobo.fueGolpeado && this.hombreLobo.vida > 0) {
+      return new EstadoEnojado(this.hombreLobo);
     }
     return null;
   }
@@ -94,8 +72,7 @@ class EstadoNormal extends EstadoEmocional {
   }
 
   obtenerSprite(tipoSprite) {
-    // Sprites normales
-    return tipoSprite; // "correr", "ataque1", "recibeTiro", etc.
+    return tipoSprite;
   }
 }
 
@@ -104,68 +81,57 @@ class EstadoNormal extends EstadoEmocional {
 // ============================================================
 class EstadoEnojado extends EstadoEmocional {
   entrar() {
-    console.log("🔥 ¡Zombie ENOJADO!");
+    console.log("🔥 ¡Hombre Lobo ENOJADO!");
     
-    // Aumentar velocidad
-    this.zombie.velocidadMax = this.zombie.velocidadBase * 1.8;
+    // Aumentar velocidad a 3.5x
+    this.hombreLobo.velocidadMax = this.hombreLobo.velocidadBase * 3.5;
     
     // Cambiar color a rojo
-    this.zombie.container.tint = 0xff2222;
+    this.hombreLobo.container.tint = 0xff2222;
     
     // Efecto de parpadeo al enojarse
-    this.zombie.container.alpha = 0.7;
+    this.hombreLobo.container.alpha = 0.7;
     setTimeout(() => {
-      if (this.zombie.container) {
-        this.zombie.container.alpha = 1;
+      if (this.hombreLobo.container) {
+        this.hombreLobo.container.alpha = 1;
       }
     }, 100);
     
     // Aumentar velocidad de animaciones
-    Object.keys(this.zombie.spritesAnimados).forEach(key => {
-      if (this.zombie.spritesAnimados[key] && this.zombie.spritesAnimados[key].animationSpeed) {
-        this.zombie.spritesAnimados[key].animationSpeed = this.zombie.velocidadAnimacionBase * 1.5;
+    Object.keys(this.hombreLobo.spritesAnimados).forEach(key => {
+      if (this.hombreLobo.spritesAnimados[key] && this.hombreLobo.spritesAnimados[key].animationSpeed) {
+        this.hombreLobo.spritesAnimados[key].animationSpeed = this.hombreLobo.velocidadAnimacionBase * 2.2;
       }
     });
     
-    console.log(`   Velocidad: ${this.zombie.velocidadMax.toFixed(2)}`);
-    console.log(`   Daño: ${this.obtenerMultiplicadorDanio() * this.zombie.danioBase}`);
+    console.log(`   Velocidad: ${this.hombreLobo.velocidadMax.toFixed(2)}`);
+    console.log(`   Daño: ${this.obtenerMultiplicadorDanio() * this.hombreLobo.danioBase}`);
   }
 
   salir() {
-    // Cleanup al salir del estado enojado
-    console.log("😌 Zombie dejó de estar enojado");
+    console.log("😌 Hombre Lobo dejó de estar enojado");
   }
 
-  actualizar() {
-    // El zombie enojado podría tener comportamiento especial
-    // Por ejemplo: gruñir, emitir partículas de furia, etc.
-  }
+  actualizar() {}
 
   verificarTransiciones() {
-    // El zombie permanece enojado hasta morir
-    // Puedes agregar condiciones para que se calme, por ejemplo:
-    // - Después de cierto tiempo
-    // - Si el jugador se aleja mucho
-    // - Si recibe curación, etc.
-    
-    return null; // Permanece enojado
+    return null;
   }
 
   obtenerMultiplicadorVelocidad() {
-    return 1.8; // 80% más rápido
+    return 3.5;
   }
 
   obtenerMultiplicadorDanio() {
-    return 2.5; // 2.5x más daño
+    return 2.5;
   }
 
   obtenerMultiplicadorAnimacion() {
-    return 1.5; // 50% más rápido
+    return 2.2;
   }
 
   obtenerSprite(tipoSprite) {
-    // Sprites de enojo (usa las animaciones alternativas)
-    return tipoSprite + "Enojado"; // "correrEnojado", "ataque1Enojado", etc.
+    return tipoSprite + "Enojado";
   }
 }
 
@@ -173,30 +139,23 @@ class EstadoEnojado extends EstadoEmocional {
 // MÁQUINA DE ESTADOS FINITOS (FSM)
 // ============================================================
 class MaquinaDeEstadosEmocionales {
-  constructor(zombie) {
-    this.zombie = zombie;
-    this.estadoActual = new EstadoNormal(zombie);
+  constructor(hombreLobo) {
+    this.hombreLobo = hombreLobo;
+    this.estadoActual = new EstadoNormal(hombreLobo);
     this.estadoActual.entrar();
   }
 
   cambiarEstado(nuevoEstado) {
     if (!nuevoEstado) return;
     
-    // Salir del estado actual
     this.estadoActual.salir();
-    
-    // Cambiar al nuevo estado
     this.estadoActual = nuevoEstado;
-    
-    // Entrar al nuevo estado
     this.estadoActual.entrar();
   }
 
   actualizar() {
-    // Actualizar el estado actual
     this.estadoActual.actualizar();
     
-    // Verificar si debe cambiar de estado
     const nuevoEstado = this.estadoActual.verificarTransiciones();
     if (nuevoEstado) {
       this.cambiarEstado(nuevoEstado);
@@ -221,9 +180,9 @@ class MaquinaDeEstadosEmocionales {
 }
 
 // ============================================================
-// CLASE ZOMBIE ACTUALIZADA CON FSM
+// CLASE HOMBRE LOBO ACTUALIZADA CON FSM
 // ============================================================
-class Zombie extends Objeto {
+class HombreLobo extends Objeto {
   constructor(x, y, velocidad, juego) {
     super(x, y, velocidad, juego);
     this.equipoParaUpdate = Math.floor(Math.random() * 9) + 1;
@@ -235,10 +194,8 @@ class Zombie extends Objeto {
     this.debug = 0;
     this.radio = 20;
 
-    // ========== NUEVO: FSM de estados emocionales ==========
-    this.fsmEmocional = null; // Se inicializa después de cargar sprites
+    this.fsmEmocional = null;
     this.fueGolpeado = false;
-    // ========== FIN NUEVO ==========
     
     this.velocidadBase = velocidad;
     this.danioBase = 10;
@@ -314,9 +271,7 @@ class Zombie extends Objeto {
       console.log("✓ Todos los sprites del hombre lobo cargados!");
       this.listo = true;
       
-      // ========== NUEVO: Inicializar FSM cuando los sprites están listos ==========
       this.fsmEmocional = new MaquinaDeEstadosEmocionales(this);
-      // ========== FIN NUEVO ==========
       
       this.cambiarSprite("correr");
     }
@@ -334,32 +289,27 @@ class Zombie extends Objeto {
       this.juego.particleSystem.hacerQueLeSalgaSangreAAlguien(this, origen);
     }
     
-    // ========== MODIFICADO: Marcar como golpeado para FSM ==========
     if (!this.fueGolpeado && this.vida > 0) {
       this.fueGolpeado = true;
-      // La FSM detectará esto en verificarTransiciones()
     }
-    // ========== FIN MODIFICADO ==========
     
     if (this.vida <= 0) {
-      this.juego.zombies = this.juego.zombies.filter((k) => k != this);
+      this.juego.hombresLobo = this.juego.hombresLobo.filter((k) => k != this);
       this.grid.remove(this);
       let sprite = this.cambiarSprite("morir", 0, false);
       
       if (this.juego.sistemaNiveles) {
-        this.juego.sistemaNiveles.zombieEliminado();
+        this.juego.sistemaNiveles.hombreLoboEliminado();
       }
       
       setTimeout(() => {
         this.borrar();
       }, 800);
     } else {
-      // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
       const spriteHurt = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("recibeTiro") : "recibeTiro";
       let sprite = this.cambiarSprite(spriteHurt, 0, false);
       
       const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
-      // ========== FIN MODIFICADO ==========
       
       setTimeout(() => {
         if (this.estado === this.estados.YENDO_AL_PLAYER || this.estado === this.estados.IDLE) {
@@ -374,7 +324,7 @@ class Zombie extends Objeto {
 
   mirarAlrededor() {
     this.vecinos = this.obtenerVecinos();
-    this.vecinosZombies = this.vecinos.filter(v => v instanceof Zombie);
+    this.vecinosHombresLobo = this.vecinos.filter(v => v instanceof HombreLobo);
     this.celdasVecinas = this.miCeldaActual.obtenerCeldasVecinas();
     this.estoyViendoAlPlayer = this.evaluarSiEstoyViendoAlPlayer();
     this.tengoDeVecinoAlPlayer = false;
@@ -407,13 +357,10 @@ class Zombie extends Objeto {
     bordes = this.ajustarPorBordes();
     evasionObstaculos = this.resolverColisionesConObstaculos();
 
-    // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
     const spriteCorrer = this.fsmEmocional ? this.fsmEmocional.obtenerSprite("correr") : "correr";
     const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
-    // ========== FIN MODIFICADO ==========
 
     if (esEnojado) {
-      // Comportamiento cuando está enojado: solo perseguir
       if (this.estado == this.estados.YENDO_AL_PLAYER || this.estado == this.estados.IDLE) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
@@ -429,16 +376,15 @@ class Zombie extends Objeto {
         this.aplicarFuerza(sumaDeVectores);
       }
     } else {
-      // Comportamiento normal: con grupo
       if (this.estado == this.estados.YENDO_AL_PLAYER) {
         vecAtraccionAlPlayer = this.atraccionAlJugador();
         this.cambiarSprite(spriteCorrer);
       } else if (this.estado == this.estados.IDLE) {
-        vecAlineacion = this.alineacion(this.vecinosZombies);
-        vecCohesion = this.cohesion(this.vecinosZombies);
+        vecAlineacion = this.alineacion(this.vecinosHombresLobo);
+        vecCohesion = this.cohesion(this.vecinosHombresLobo);
         this.cambiarSprite(spriteCorrer);
         
-        if (this.vecinosZombies.length === 0) {
+        if (this.vecinosHombresLobo.length === 0) {
           if (!this.movimientoAleatorio || Math.random() < 0.01) {
             this.movimientoAleatorio = new PIXI.Point(
               (Math.random() - 0.5) * 0.5,
@@ -454,7 +400,7 @@ class Zombie extends Objeto {
         this.estado == this.estados.IDLE ||
         this.estado == this.estados.YENDO_AL_PLAYER
       ) {
-        vecSeparacion = this.separacion(this.vecinosZombies);
+        vecSeparacion = this.separacion(this.vecinosHombresLobo);
 
         sumaDeVectores.x += (vecSeparacion || {}).x || 0;
         sumaDeVectores.x += (vecAlineacion || {}).x || 0;
@@ -484,11 +430,9 @@ class Zombie extends Objeto {
   update() {
     if (!this.listo) return;
     
-    // ========== NUEVO: Actualizar FSM ==========
     if (this.fsmEmocional) {
       this.fsmEmocional.actualizar();
     }
-    // ========== FIN NUEVO ==========
     
     if (this.juego.contadorDeFrames % this.equipoParaUpdate == 0) {
       this.mirarAlrededor();
@@ -552,9 +496,7 @@ class Zombie extends Objeto {
   }
 
   segunDatosCambiarDeEstado() {
-    // ========== MODIFICADO: Usar FSM para saber si está enojado ==========
     const esEnojado = this.fsmEmocional ? this.fsmEmocional.esEnojado() : false;
-    // ========== FIN MODIFICADO ==========
     
     if (esEnojado) {
       if (this.estoyTocandoAlPlayer) {
@@ -586,11 +528,9 @@ class Zombie extends Objeto {
       if (ahora - this.ultimoAtaque >= this.cooldownAtaque && distanciaAlPlayer < this.juego.grid.cellSize) {
         const numAtaque = (Math.floor(Math.random() * 2) + 1).toString();
         
-        // ========== MODIFICADO: Usar FSM para obtener sprite correcto ==========
         const spriteAtaque = this.fsmEmocional 
           ? this.fsmEmocional.obtenerSprite("ataque" + numAtaque)
           : "ataque" + numAtaque;
-        // ========== FIN MODIFICADO ==========
         
         const sprite = this.cambiarSprite(spriteAtaque, 0, false);
 
@@ -645,9 +585,9 @@ class Zombie extends Objeto {
     const vecPromedio = new PIXI.Point(0, 0);
     let total = 0;
 
-    vecinos.forEach((zombie) => {
-      vecPromedio.x += zombie.container.x;
-      vecPromedio.y += zombie.container.y;
+    vecinos.forEach((hombreLobo) => {
+      vecPromedio.x += hombreLobo.container.x;
+      vecPromedio.y += hombreLobo.container.y;
       total++;
     });
 
@@ -668,17 +608,17 @@ class Zombie extends Objeto {
   separacion(vecinos) {
     const vecFuerza = new PIXI.Point(0, 0);
 
-    vecinos.forEach((zombie) => {
+    vecinos.forEach((hombreLobo) => {
       const distancia = distanciaAlCuadrado(
         this.container.x,
         this.container.y,
-        zombie.container.x,
-        zombie.container.y
+        hombreLobo.container.x,
+        hombreLobo.container.y
       );
 
       const dif = new PIXI.Point(
-        this.container.x - zombie.container.x,
-        this.container.y - zombie.container.y
+        this.container.x - hombreLobo.container.x,
+        this.container.y - hombreLobo.container.y
       );
       dif.x /= distancia;
       dif.y /= distancia;
@@ -695,9 +635,9 @@ class Zombie extends Objeto {
     const vecPromedio = new PIXI.Point(0, 0);
     let total = 0;
 
-    vecinos.forEach((zombie) => {
-      vecPromedio.x += zombie.velocidad.x;
-      vecPromedio.y += zombie.velocidad.y;
+    vecinos.forEach((hombreLobo) => {
+      vecPromedio.x += hombreLobo.velocidad.x;
+      vecPromedio.y += hombreLobo.velocidad.y;
       total++;
     });
 
