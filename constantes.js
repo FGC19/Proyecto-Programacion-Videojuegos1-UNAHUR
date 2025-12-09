@@ -51,3 +51,4 @@ function calcularDistancia(pos1, pos2) {
   const dy = pos2.y - pos1.y;
   return Math.sqrt(dx * dx + dy * dy);
 }
+
