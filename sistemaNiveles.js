@@ -4,12 +4,10 @@ class SistemaNiveles {
     this.nivelActual = 1;
     this.hombresLoboEliminados = 0;
     
-    // ========== NUEVO: Sistema de Score ==========
     this.score = 0;
     this.highScore = this.cargarHighScore();
     this.puntosPorHombreLobo = 10;
     this.puntosPorNivel = 500;
-    // ========== FIN NUEVO ==========
     
     // Configuración de niveles
     this.niveles = {
@@ -34,7 +32,6 @@ class SistemaNiveles {
     this.crearUI();
   }
 
-  // ========== NUEVO: Métodos de Score ==========
   cargarHighScore() {
     const saved = localStorage.getItem('hombreLoboHighScore');
     return saved ? parseInt(saved) : 0;
@@ -47,16 +44,14 @@ class SistemaNiveles {
   agregarPuntos(puntos) {
     this.score += puntos;
     
-    // Actualizar high score si es superado
     if (this.score > this.highScore) {
       this.highScore = this.score;
       this.guardarHighScore();
       
-      // Efecto visual cuando se supera el high score
-      this.textoHighScore.style.fill = 0xFFD700; // Dorado
+      this.textoHighScore.style.fill = 0xFFD700;
       setTimeout(() => {
         if (this.textoHighScore) {
-          this.textoHighScore.style.fill = 0xFFFF00; // Volver a amarillo
+          this.textoHighScore.style.fill = 0xFFFF00;
         }
       }, 500);
     }
@@ -68,15 +63,12 @@ class SistemaNiveles {
     this.score = 0;
     this.actualizarUI();
   }
-  // ========== FIN NUEVO ==========
 
   crearUI() {
-    // Crear contenedor de UI
     this.uiContainer = new PIXI.Container();
     this.uiContainer.zIndex = Z_INDEX.ui;
     this.juego.app.stage.addChild(this.uiContainer);
 
-    // Texto de nivel
     this.textoNivel = new PIXI.Text('Nivel 1', {
       fontFamily: 'Arial',
       fontSize: 32,
@@ -87,7 +79,6 @@ class SistemaNiveles {
     this.textoNivel.position.set(20, 20);
     this.uiContainer.addChild(this.textoNivel);
 
-    // Texto de hombres lobo restantes
     this.textoHombresLobo = new PIXI.Text('Hombres Lobo: 150/150', {
       fontFamily: 'Arial',
       fontSize: 24,
@@ -98,8 +89,6 @@ class SistemaNiveles {
     this.textoHombresLobo.position.set(20, 60);
     this.uiContainer.addChild(this.textoHombresLobo);
 
-    // ========== NUEVO: UI de Score ==========
-    // Score actual
     this.textoScore = new PIXI.Text('Score: 0', {
       fontFamily: 'Arial',
       fontSize: 28,
@@ -110,7 +99,6 @@ class SistemaNiveles {
     this.textoScore.position.set(20, 95);
     this.uiContainer.addChild(this.textoScore);
 
-    // High Score
     this.textoHighScore = new PIXI.Text('High Score: ' + this.highScore, {
       fontFamily: 'Arial',
       fontSize: 24,
@@ -120,9 +108,7 @@ class SistemaNiveles {
     });
     this.textoHighScore.position.set(20, 130);
     this.uiContainer.addChild(this.textoHighScore);
-    // ========== FIN NUEVO ==========
 
-    // Barra de vida - Fondo (rojo)
     this.barraVidaFondo = new PIXI.Graphics();
     this.barraVidaFondo.beginFill(0x660000);
     this.barraVidaFondo.drawRect(0, 0, 200, 20);
@@ -130,7 +116,6 @@ class SistemaNiveles {
     this.barraVidaFondo.position.set(20, 165);
     this.uiContainer.addChild(this.barraVidaFondo);
 
-    // Barra de vida - Vida actual (verde)
     this.barraVida = new PIXI.Graphics();
     this.barraVida.beginFill(0x00FF00);
     this.barraVida.drawRect(0, 0, 200, 20);
@@ -138,7 +123,6 @@ class SistemaNiveles {
     this.barraVida.position.set(20, 165);
     this.uiContainer.addChild(this.barraVida);
 
-    // Texto de vida
     this.textoVida = new PIXI.Text('Vida: 100/100', {
       fontFamily: 'Arial',
       fontSize: 20,
@@ -149,7 +133,6 @@ class SistemaNiveles {
     this.textoVida.position.set(25, 167);
     this.uiContainer.addChild(this.textoVida);
 
-    // Mensaje de nivel (se muestra temporalmente)
     this.mensajeNivel = new PIXI.Text('', {
       fontFamily: 'Arial',
       fontSize: 48,
@@ -162,25 +145,21 @@ class SistemaNiveles {
     this.mensajeNivel.visible = false;
     this.uiContainer.addChild(this.mensajeNivel);
 
-    // Pantalla de Game Over
     this.crearPantallaGameOver();
   }
 
   crearPantallaGameOver() {
-    // Contenedor de Game Over (inicialmente invisible)
     this.gameOverContainer = new PIXI.Container();
     this.gameOverContainer.visible = false;
     this.gameOverVisible = false;
     this.uiContainer.addChild(this.gameOverContainer);
 
-    // Fondo oscuro semi-transparente
     this.gameOverFondo = new PIXI.Graphics();
     this.gameOverFondo.beginFill(0x000000, 0.8);
     this.gameOverFondo.drawRect(0, 0, 4000, 4000);
     this.gameOverFondo.endFill();
     this.gameOverContainer.addChild(this.gameOverFondo);
 
-    // Texto "GAME OVER"
     this.textoGameOver = new PIXI.Text('GAME OVER', {
       fontFamily: 'Arial',
       fontSize: 72,
@@ -192,7 +171,6 @@ class SistemaNiveles {
     this.textoGameOver.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoGameOver);
 
-    // ========== NUEVO: Mostrar score final y high score ==========
     this.textoScoreFinal = new PIXI.Text('', {
       fontFamily: 'Arial',
       fontSize: 36,
@@ -214,9 +192,7 @@ class SistemaNiveles {
     });
     this.textoHighScoreFinal.anchor.set(0.5);
     this.gameOverContainer.addChild(this.textoHighScoreFinal);
-    // ========== FIN NUEVO ==========
 
-    // Texto "Presiona ENTER para reiniciar"
     this.textoReiniciar = new PIXI.Text('Presiona ENTER para reiniciar', {
       fontFamily: 'Arial',
       fontSize: 32,
@@ -230,7 +206,6 @@ class SistemaNiveles {
   }
 
   mostrarGameOver() {
-    // Mostrar la pantalla de Game Over 
     this.gameOverContainer.visible = true;
     this.gameOverVisible = true;
 
@@ -238,32 +213,20 @@ class SistemaNiveles {
     const centerY = this.juego.app.screen.height / 2;
 
     this.textoGameOver.position.set(centerX, centerY - 100);
-    
-    // ========== NUEVO: Mostrar scores ==========
     this.textoScoreFinal.text = 'Score Final: ' + this.score;
     this.textoScoreFinal.position.set(centerX, centerY - 20);
-    
     this.textoHighScoreFinal.text = 'High Score: ' + this.highScore;
     this.textoHighScoreFinal.position.set(centerX, centerY + 30);
-    // ========== FIN NUEVO ==========
-    
     this.textoReiniciar.position.set(centerX, centerY + 90);
 
-    // Aumentar zIndex para que esté encima
     this.gameOverContainer.zIndex = Z_INDEX.ui + 1000;
   }
 
   gameOver() {
-    // Verificar que no esté ya en Game Over
     if (this.gameOverVisible) return;
     
-    // Pausar el juego
     this.juego.pausa = true;
-    
-    // Mostrar pantalla de Game Over
     this.mostrarGameOver();
-    
-    // Listener para reiniciar con ENTER
     this.escucharReinicio();
   }
 
@@ -279,26 +242,72 @@ class SistemaNiveles {
   }
 
   reiniciarJuego() {
+    console.log("🔄 === INICIANDO REINICIO ===");
+    console.log("Nivel actual:", this.nivelActual);
+    console.log("Hombres lobo antes de limpiar:", this.juego.hombresLobo.length);
+    
     // Ocultar Game Over
     this.gameOverContainer.visible = false;
     this.gameOverVisible = false;
     
-    // Despausar
+    // Resetear score
+    this.resetearScore();
+    
+    // Guardar nivel actual
+    const nivelAReiniciar = this.nivelActual;
+    const config = this.niveles[nivelAReiniciar];
+    
+    // PRIMERO: Despausar el juego para que todo pueda actualizarse
     this.juego.pausa = false;
     
-    // ========== NUEVO: Resetear score ==========
-    this.resetearScore();
-    // ========== FIN NUEVO ==========
+    // Limpiar nivel
+    this.limpiarNivel();
     
-    // Restaurar vida del jugador
+    console.log("Hombres lobo después de limpiar:", this.juego.hombresLobo.length);
+    
+    // Reiniciar contador
+    this.hombresLoboEliminados = 0;
+    
+    // Restaurar jugador
     if (this.juego.player) {
       this.juego.player.vida = this.juego.player.vidaMaxima;
       this.juego.player.invulnerable = false;
       this.juego.player.container.alpha = 1;
+      this.juego.player.velocidad.x = 0;
+      this.juego.player.velocidad.y = 0;
+      this.juego.player.container.x = this.juego.canvasWidth / 2;
+      this.juego.player.container.y = this.juego.canvasHeight / 2;
     }
     
-    // Reiniciar desde el nivel 1
-    this.iniciarNivel(1);
+    // Crear árboles
+    console.log(`🌳 Creando ${config.arboles} árboles...`);
+    this.juego.ponerArboles(config.arboles);
+    console.log("Árboles creados:", this.juego.arboles.length);
+    
+    // Crear hombres lobo
+    console.log(`🐺 Creando ${config.hombresLobo} hombres lobo con velocidad ${config.velocidadHombresLoboMin}-${config.velocidadHombresLoboMax}...`);
+    this.juego.ponerHombresLoboConConfiguracion(
+      config.hombresLobo,
+      config.velocidadHombresLoboMin,
+      config.velocidadHombresLoboMax
+    );
+    
+    console.log("✅ Hombres lobo en array:", this.juego.hombresLobo.length);
+    console.log("Primer hombre lobo:", this.juego.hombresLobo[0]);
+    
+    // Verificar que están en el stage
+    let enStage = 0;
+    this.juego.hombresLobo.forEach(hl => {
+      if (hl.container && hl.container.parent) {
+        enStage++;
+      }
+    });
+    console.log("Hombres lobo en stage:", enStage);
+    
+    // Actualizar UI
+    this.actualizarUI();
+    
+    console.log("🔄 === REINICIO COMPLETADO ===");
   }
 
   mostrarMensajeNivel(mensaje, duracion = 3000) {
@@ -315,6 +324,8 @@ class SistemaNiveles {
   }
 
   iniciarNivel(nivel) {
+    console.log(`🎮 Iniciando nivel ${nivel}...`);
+    
     this.nivelActual = nivel;
     this.hombresLoboEliminados = 0;
     
@@ -331,6 +342,8 @@ class SistemaNiveles {
       config.velocidadHombresLoboMax
     );
     
+    console.log(`✅ Nivel ${nivel} creado con ${this.juego.hombresLobo.length} hombres lobo`);
+    
     // Mostrar mensaje
     this.mostrarMensajeNivel(config.mensajeBienvenida);
     
@@ -341,7 +354,7 @@ class SistemaNiveles {
     this.juego.player.container.x = this.juego.canvasWidth / 2;
     this.juego.player.container.y = this.juego.canvasHeight / 2;
 
-    // Reiniciar estado del jugador (vida, invulnerabilidad, etc.)
+    // Reiniciar estado del jugador
     try {
       const p = this.juego.player;
       if (p) {
@@ -360,41 +373,53 @@ class SistemaNiveles {
   }
 
   limpiarNivel() {
-    // Eliminar todos los hombres lobo
-    this.juego.hombresLobo.forEach(hl => {
-      this.juego.app.stage.removeChild(hl.container);
-      this.juego.grid.remove(hl);
+    console.log("🧹 Limpiando nivel...");
+    
+    // Eliminar hombres lobo
+    [...this.juego.hombresLobo].forEach(hl => {
+      if (hl && hl.container) {
+        if (hl.container.parent) {
+          hl.container.parent.removeChild(hl.container);
+        }
+        this.juego.grid.remove(hl);
+      }
     });
     this.juego.hombresLobo = [];
 
-    // Eliminar todos los árboles
+    // Eliminar árboles
     if (this.juego.arboles) {
-      this.juego.arboles.forEach(a => {
-        this.juego.app.stage.removeChild(a.container);
-        this.juego.grid.remove(a);
+      [...this.juego.arboles].forEach(a => {
+        if (a && a.container) {
+          if (a.container.parent) {
+            a.container.parent.removeChild(a.container);
+          }
+          this.juego.grid.remove(a);
+        }
       });
       this.juego.arboles = [];
     }
 
     // Eliminar balas
-    this.juego.balas.forEach(b => {
-      this.juego.app.stage.removeChild(b.container);
+    [...this.juego.balas].forEach(b => {
+      if (b && b.container) {
+        if (b.container.parent) {
+          b.container.parent.removeChild(b.container);
+        }
+      }
     });
     this.juego.balas = [];
 
+    // Limpiar obstáculos
     this.juego.obstaculos = [];
+    
+    console.log("✅ Nivel limpiado completamente");
   }
 
   hombreLoboEliminado() {
     this.hombresLoboEliminados++;
-    
-    // ========== NUEVO: Agregar puntos al eliminar hombre lobo ==========
     this.agregarPuntos(this.puntosPorHombreLobo);
-    // ========== FIN NUEVO ==========
-    
     this.actualizarUI();
     
-    // Verificar si pasó el nivel
     const config = this.niveles[this.nivelActual];
     if (this.hombresLoboEliminados >= config.hombresLoboParaPasar) {
       this.pasarSiguienteNivel();
@@ -402,10 +427,7 @@ class SistemaNiveles {
   }
 
   pasarSiguienteNivel() {
-    // ========== NUEVO: Bonus por completar nivel ==========
     this.agregarPuntos(this.puntosPorNivel);
-    // ========== FIN NUEVO ==========
-    
     const siguienteNivel = this.nivelActual + 1;
     
     if (this.niveles[siguienteNivel]) {
@@ -416,7 +438,6 @@ class SistemaNiveles {
         }, 2500);
       }, 1000);
     } else {
-      // Victoria final
       this.mostrarMensajeNivel('¡FELICIDADES! ¡GANASTE EL JUEGO!', 5000);
     }
   }
@@ -427,19 +448,14 @@ class SistemaNiveles {
     
     this.textoNivel.text = `Nivel ${this.nivelActual}`;
     this.textoHombresLobo.text = `Hombres Lobo: ${hombresLoboRestantes}/${config.hombresLobo}`;
-    
-    // ========== NUEVO: Actualizar scores ==========
     this.textoScore.text = `Score: ${this.score}`;
     this.textoHighScore.text = `High Score: ${this.highScore}`;
-    // ========== FIN NUEVO ==========
   }
 
   update() {
-    // Actualizar posición de UI según la cámara
     this.uiContainer.position.x = -this.juego.app.stage.position.x;
     this.uiContainer.position.y = -this.juego.app.stage.position.y;
     
-    // Actualizar barra de vida y texto según el jugador
     try {
       if (this.juego && this.juego.player) {
         const p = this.juego.player;
@@ -447,17 +463,15 @@ class SistemaNiveles {
         const vidaActual = typeof p.vida === 'number' ? p.vida : 0;
         const ratio = Math.max(0, Math.min(1, vidaActual / maxVida));
 
-        // Redibujar la barra de vida con el ancho proporcional
         this.barraVida.clear();
         this.barraVida.beginFill(0x00FF00);
         this.barraVida.drawRect(0, 0, 200 * ratio, 20);
         this.barraVida.endFill();
 
-        // Actualizar texto
         this.textoVida.text = `Vida: ${Math.round(vidaActual)}/${maxVida}`;
       }
     } catch (e) {
-      // No interrumpir el juego por errores en el UI
+      // No interrumpir
     }
   }
 }
